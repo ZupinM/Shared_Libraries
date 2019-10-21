@@ -164,7 +164,7 @@ extern float mzp_current;
 
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
-bldc_motor *bldc_cm = &bldc_motors[1];
+bldc_motor *bldc_cm = &bldc_motors[0];
 
 
 
@@ -722,12 +722,16 @@ int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to 
 
    if(bldc_cm->index == 1)
     if ((abs(err0) > 100 && abs(err1) < 100) && !any_motor_moving) {
-    bldc_cm = &bldc_motors[0], eeprom_write(SYS_VARS_EE); 
-   }
+      bldc_cm = &bldc_motors[0];
+      eeprom_write(SYS_VARS_EE); 
+    }
+#if BLDC_MOTOR_COUNT > 1
    if(bldc_cm->index == 0) 
     if ((abs(err1) > 100 && abs(err0) < 100) && !any_motor_moving) {
-    bldc_cm = &bldc_motors[1], eeprom_write(SYS_VARS_EE);
-   }
+      bldc_cm = &bldc_motors[1];
+      eeprom_write(SYS_VARS_EE);
+    }
+#endif
   Flag_check();
   return  0;
  }
@@ -1157,8 +1161,8 @@ void Flag_check() {
       if(val>0) {
 
         bldc_motors[i].status |= BLDC_STATUS_MOVING_OUT;
-        bldc_motors[i].status |= BLDC_STATUS_ERR_MOVEOUT;
-      } else {
+        bldc_motors[i].status &= ~BLDC_STATUS_ERR_MOVEOUT;
+      } else if(val < 0) {
 
         bldc_motors[i].status |= BLDC_STATUS_MOVING_IN;
         bldc_motors[i].status &= ~BLDC_STATUS_ERR_MOVEOUT;
