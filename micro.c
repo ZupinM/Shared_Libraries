@@ -5,7 +5,7 @@
 #include "sun.h"
 
 #include "LPC15xx.h"
-#include "gpio.h"
+#include "../gpio.h"
 
 /***********************************************************
   CHECK TIME

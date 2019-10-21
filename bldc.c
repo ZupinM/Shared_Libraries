@@ -70,7 +70,7 @@ const unsigned char bldc_ccw_next[7][3]={
 
 #include "adc_15xx.h"
 
-#include "gpio.h"
+#include "../gpio.h"
 
 #include <math.h>
 #include <stdlib.h>

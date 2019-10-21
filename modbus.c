@@ -11,7 +11,7 @@
 #include "LPC15xx.h"
 #include "modbus.h"
 #include "config.h"
-#include "gpio.h"
+#include "../gpio.h"
 #include <string.h>
 #include "aes.h"
 #include "bldc.h"

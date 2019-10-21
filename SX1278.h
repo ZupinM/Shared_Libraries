@@ -18,32 +18,6 @@
 #define LoRa_DEFAULT_TIMEOUT		3000
 
 
-//-------------SPI pin definitions----------------
-#define LORA_MOSI_PORT  0
-#define LORA_MOSI_PIN   24
-
-#define LORA_MISO_PORT  1
-#define LORA_MISO_PIN   10
-
-#define LORA_SCK_PORT   1
-#define LORA_SCK_PIN    9
-
-#define LORA_SS_PORT    0
-#define LORA_SS_PIN     26
-
-#define LORA_DIO0_PORT  1
-#define LORA_DIO0_PIN   6
-
-#define LORA_RESET_PORT 1
-#define LORA_RESET_PIN 30
-
-#define LORA_MOSI LORA_MOSI_PIN+32*LORA_MOSI_PORT
-#define LORA_MISO LORA_MISO_PIN+32*LORA_MISO_PORT
-#define LORA_SCK LORA_SCK_PIN+32*LORA_SCK_PORT
-#define LORA_SS LORA_SS_PIN+32*LORA_SS_PORT
-#define LORA_DIO0 LORA_DIO0_PIN+32*LORA_DIO0_PORT
-//-----------------------------------------------
-
 //#define GREEN 1
 
 #define MASTER 1

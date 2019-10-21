@@ -12,7 +12,7 @@
 //#include "LPC11xx.h"			/* LPC11xx Peripheral Registers */
 #include "LPC15xx.h"
 #include "main.h"
-#include "gpio.h"
+#include "../gpio.h"
 #include "bldc.h"
 
 

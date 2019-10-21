@@ -11,7 +11,7 @@
 #include "main.h"
 #include "LPC15xx.h"
 #include "uart.h"
-#include "gpio.h"
+#include "../gpio.h"
 
 
 // CodeRed - change for CMSIS 1.3

@@ -44,7 +44,7 @@
  ****************************************************************************/
 
 static USBD_HANDLE_T g_hUsb;
-//static uint8_t g_rxBuff[256];
+static uint8_t g_rxBuff[256];
 const  USBD_API_T *g_pUsbApi;
 
 /*****************************************************************************
@@ -146,7 +146,7 @@ int main(void)
 		ret = vcom_init(g_hUsb, &desc, &usb_param);
 		if (ret == LPC_OK) {
 			/*  enable USB interrupts */
-			NVIC_EnableIRQ(USB0_IRQn);
+			NVIC_EnableIRQ(USB_IRQ_IRQn);
 			/* now connect */
 			USBD_API->hw->Connect(g_hUsb, 1);
 		}

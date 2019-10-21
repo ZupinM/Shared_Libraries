@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include "bldc.h"
+#include "../gpio.h"
 
 extern float parameters [N_parameters];
 extern float parameters_fixed [N_parameters_fixed];

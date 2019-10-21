@@ -1,6 +1,6 @@
 #include "SX1278.h"
 #include <string.h>
-#include "gpio.h"
+#include "../gpio.h"
 #include "main.h"
 #include "modbus.h"
 #include "uart.h"
