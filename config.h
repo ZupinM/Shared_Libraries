@@ -87,8 +87,8 @@ Header file za SunTracer
 #define SF_HALL_WIRING_A		(1<<23)
 //fsta#define SF_HALL_WIRING_B		(1<<23)
 #define SF_HALL_WIRING_B		(1<<24)
-//fsta #define WARNING_ENDSW_A_PRESSED	        (1<<24)
-//fsta #define WARNING_ENDSW_B_PRESSED         (1<<25)
+#define WARNING_ENDSW_A_PRESSED	        (1<<24)
+#define WARNING_ENDSW_B_PRESSED         (1<<25)
 //fsta#define WARNING_OVERVOLTAGE_OCCURED		(1<<26)
 
 //mzp
