@@ -521,21 +521,26 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cA6_A:                 A6_A=FloatTemp; break;
     case cB1_A:                 B1_A=FloatTemp; break;
     case cB2_A:                 B2_A=FloatTemp; break;
-    case cgear_ratio_A:         //fsta gear_ratio_A=FloatTemp; break;
+    case cgear_ratio_A:
       bldc_Motor(0)->gear_ratio = FloatTemp;
       break; 
-    case cmin_range_A:          //fsta min_range_A=FloatTemp; break;
+    case cmin_range_A:
       bldc_Motor(0)->min_position = FloatTemp;
       break;
-    case cmax_range_A:          max_range_A=FloatTemp; break;
+    case cmax_range_A:
+      bldc_Motor(0)->max_position = FloatTemp;
+      break;
     case ccoordinate_mode_A:    coordinate_mode_A=FloatTemp; break;
     case cgeometry_mode_A:      {
         geometry_mode_A=FloatTemp;
         //goref_Nday_cnt_A=0;                             //brisanje raznih registrov A osi
         break;      }
-    case cmax_Imotor_A:         max_Imotor_A=FloatTemp; break;
-    case cimotor_factor_A:      imotor_factor_A=FloatTemp; break;
-    
+    case cmax_Imotor_A:
+      bldc_Motor(0)->I_limit = FloatTemp;
+      break;
+    case cInrush_ratioA:      
+      bldc_Motor(0)->I_Inrush_ratio = FloatTemp; 
+      break; 
   
     case chome_position_A:      if (strstr((char *)StringTemp,"off")) {home_position_A=1000; break;}     // 1000.0 se uporablja kot zastavica za onemogocenje osi, da se postavi v wind-safe pozicijo
                               else home_position_A=FloatTemp; break; 
@@ -551,19 +556,25 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cA6_B:                 A6_B=FloatTemp; break;
     case cB1_B:                 B1_B=FloatTemp; break;
     case cB2_B:                 B2_B=FloatTemp; break;
-    case cgear_ratio_B:         //fsta gear_ratio_B=FloatTemp; break;
+    case cgear_ratio_B:
       bldc_Motor(1)->gear_ratio = FloatTemp;
       break;
-    case cmin_range_B:          //fsta min_range_B=FloatTemp; break;
+    case cmin_range_B:
       bldc_Motor(1)->min_position = FloatTemp;
       break;
-    case cmax_range_B:          max_range_B=FloatTemp; break;
+    case cmax_range_B:
+      bldc_Motor(1)->max_position = FloatTemp;
+      break;
     case ccoordinate_mode_B:    coordinate_mode_B=FloatTemp; break;
     case cgeometry_mode_B:      geometry_mode_B=FloatTemp; break; 
         //goref_Nday_cnt_B=0;                             //brisanje raznih registrov B osi
             
-    case cmax_Imotor_B:         max_Imotor_B=FloatTemp; break;
-    case cimotor_factor_B:      imotor_factor_B=FloatTemp; break;
+    case cmax_Imotor_B:
+      bldc_Motor(1)->I_limit = FloatTemp;
+      break;
+    case cInrush_ratioB:
+      bldc_Motor(1)->I_Inrush_ratio = FloatTemp;
+      break;
     case chome_position_B:      if (strstr((char *)StringTemp,"off")) {home_position_B=1000; break;}     // 1000.0 se uporablja kot zastavica za onemogocenje osi, da se postavi v wind-safe pozicijo
                                 else home_position_B=FloatTemp; break;      
 
@@ -630,8 +641,8 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
    case cOverTempShift:       OverTempShift=FloatTemp; break;
    case cTime_out_of_focus:   Time_out_of_focus=FloatTemp; break;
     ///S
-   case cInrush_ratioA :       Mot_inrush_ratio_A= FloatTemp; break;
-   case cInrush_ratioB :       Mot_inrush_ratio_B= FloatTemp; break;
+ //fsta  case cInrush_ratioA :       Mot_inrush_ratio_A = FloatTemp; break;
+ //fsta  case cInrush_ratioB :       Mot_inrush_ratio_B = FloatTemp; break;
    case cInrush_timeA:         Mot_inrush_time_A = FloatTemp; break;
    case cInrush_timeB:         Mot_inrush_time_B = FloatTemp; break;
    case cfocus_max_offset:     focus_max_offset  = FloatTemp; break;
@@ -723,10 +734,10 @@ void write_value_limit(void){
 
     if (max_Imotor_A>10.0)     max_Imotor_A=10.0;   //najvec 10A
     if (max_Imotor_B>10.0)     max_Imotor_B=10.0;
-    if (imotor_factor_A>110.0) imotor_factor_A=110.0;       //A: I motor factor 60...100
-    if (imotor_factor_A<50.0)  imotor_factor_A=50.0;
-    if (imotor_factor_B>110.0) imotor_factor_B=110.0;       //B: I motor factor 60...100
-    if (imotor_factor_B<50.0)  imotor_factor_B=50.0;
+  //fsta  if (imotor_factor_A>110.0) imotor_factor_A=110.0;       //A: I motor factor 60...100
+  //fsta  if (imotor_factor_A<50.0)  imotor_factor_A=50.0;
+  //fsta  if (imotor_factor_B>110.0) imotor_factor_B=110.0;       //B: I motor factor 60...100
+  //fsta  if (imotor_factor_B<50.0)  imotor_factor_B=50.0;
 
    
     

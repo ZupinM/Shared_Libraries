@@ -153,10 +153,6 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
 }
 
 /* Virtual com port buffered read routine */
-
-//fsta 
-//int iiii = 0;
-
 uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
 {
 	VCOM_DATA_T *pVcom = &g_vCOM;
@@ -173,33 +169,6 @@ uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
 			pVcom->rx_flags &= ~VCOM_RX_BUF_FULL;
 			pVcom->rx_rd_count = pVcom->rx_count = 0;
 		}
-
-
-//fsta
-/*
-static char cc[512];
-static char dd[512];
-strcpy(cc, "");
-strcpy(dd, "");
-for(int ii=0;ii<128;ii++) {
-//for(int ii=0;ii<256;ii++) {
- strcpy(dd, cc);
- if(ii%16==0)
-  sprintf(cc, "%s\n%x", dd, pBuf[ii]);
- else
-  sprintf(cc, "%s %x", dd, pBuf[ii]);
- //strcat(cc, (char *)pBuf[ii]);
- //strcat(cc, " ");
-
- //debug_printf("%x\n", pBuf[ii]);
- //debug_printf("%s\n", cc);
-}
-if(iiii<10)
-debug_printf("%s\n", cc);
-//debug_printf("USB_display: %x   %x %x %x %x   %d\n", iii, pBuf[0], pBuf[1], pBuf[2], pBuf[3], buf_len);
-iiii++;
-*/
-//fsta
 
 		/* exit critical section */
 		NVIC_EnableIRQ(USB_IRQ_IRQn);

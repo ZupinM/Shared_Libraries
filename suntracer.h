@@ -24,7 +24,6 @@
 #define unique_ID_address   0x1FFFF7E8      //unique number for every single uC
 #define BldVersionAddress   0x08000150      //v bootloaderju naslov, kjer je napisana verzija bootloaderja
 #define ADC1_DR_Address     0x4001244C
-//fsta
 #define ZEROSPEED           2000            //ko se motor ne vrti, je speed==ZEROSPEED
 #define ZEROSPEED_S         4000
 #define ZEROSPEED_VS        8000
@@ -32,7 +31,6 @@
 #define ACCEL_LOW           30              //pospesek: 30-tiv27c, 60-tiv26a        //near destination_A - slow move (startup=1900ms)
 #define ACCEL_HIGH          3
 #define DIFF_HIGH           150             //razlika v impulzih, da starta z ACCEL_HIGH (funkcija: motor_check_position)
-//fsta
 #define DIFF_LOW            50              //razlika v impulzih, da starta z ACCEL_LOW, ali pa sploh ne 
 #define DIFF_LOW_S          5
 #define DIFF_LOW_VS         0
@@ -224,7 +222,7 @@ extern float parameters [N_parameters];
 #define reserved0             flash_backup[68]  //time, when returning back to home (east)
 #define usolar_factor       flash_backup[14]  //U solar voltage
 #define max_Imotor_A        flash_backup[23]
-#define imotor_factor_A     flash_backup[15]  //I motor current (725.5 means 0.0007255V/step)
+//fsta#define imotor_factor_A     flash_backup[15]  //I motor current (725.5 means 0.0007255V/step)
 #define run_delay_home        flash_backup[69]  //zamik, da vsi na enkrat ne pozenejo za home (v sekundah)
 #define run_delay             flash_backup[70]  //zamik, da vsi na enkrat ne pozenejo pri sledenju (v sekundah)
 #define interval              flash_backup[71]  //interval pomika v sekundah
@@ -247,7 +245,7 @@ extern float parameters [N_parameters];
 #define home_position_B       flash_backup[85]  //kam se bo zvecer vrnila os B (v stopinjah)
 #define longitude             flash_backup[57]
 #define max_Imotor_B        flash_backup[44]
-#define imotor_factor_B     flash_backup[15]
+//fsta#define imotor_factor_B     flash_backup[15]
 #define rtc_correction        flash_backup[86]
 #define goref_Nday_A          flash_backup[87]
 #define goref_Nday_B          flash_backup[88]

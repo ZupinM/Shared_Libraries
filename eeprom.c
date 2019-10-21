@@ -205,10 +205,6 @@ void update_flash_backup(){
   ES_0_normallyOpenHi = (((unsigned int)flash_backup[149]) >> 2) & (1 << 0);
   ES_1_normallyOpenHi = (((unsigned int)flash_backup[149]) >> 3) & (1 << 0);
 
-//fsta
-//debug_printf("r ES_0_normallyOpenLo:%d ES_0_normallyOpenHi:%d ES_1_normallyOpenLo:%d ES_1_normallyOpenHi:%d\n", ES_0_normallyOpenLo,ES_0_normallyOpenHi,ES_1_normallyOpenLo,ES_1_normallyOpenHi);
-
-
   if(f_pcb_version == 0)
     f_pcb_version = 0x1E4601;
 
@@ -242,9 +238,6 @@ void flash_erase() {
 }
 
 void eeprom_write(unsigned int write_address) {
-
-//fsta
-//debug_printf("write_address: %x\n",  write_address);
 
   // upgrade indicator
   int upgrExe = 0;
@@ -342,10 +335,6 @@ void eeprom_write(unsigned int write_address) {
     flash_backup[18] = m->status;
     upgrExe = 1;
   }
-
-//fsta
-//debug_printf("%f %f   %f %f\n", flash_backup[19], (float)m->position, flash_backup[20], m->min_position);
-
   if(flash_backup[19] != (float)m->position) {
     flash_backup[19] = m->position;
     upgrExe = 1;
@@ -504,9 +493,6 @@ void eeprom_write(unsigned int write_address) {
     upgrExe = 1;
   }
 
-//fsta
-//debug_printf("AAA %d   %f %f\n", upgrExe, flash_backup[56], (float)reset_status);
-
   if(flash_backup[56] != (float)reset_status) {
     flash_backup[56] = reset_status;
     upgrExe = 1;
@@ -545,9 +531,6 @@ void eeprom_write(unsigned int write_address) {
     flash_backup[68] = transceiver;
     upgrExe = 1;
   }
-
-//fsta
-//debug_printf("w ES_0_normallyOpenLo:%d ES_0_normallyOpenHi:%d ES_1_normallyOpenLo:%d ES_1_normallyOpenHi:%d\n", ES_0_normallyOpenLo,ES_0_normallyOpenHi,ES_1_normallyOpenLo,ES_1_normallyOpenHi);
 
   if(flash_backup[149] != (float)(ES_0_normallyOpenLo + (ES_1_normallyOpenLo << 1) + (ES_0_normallyOpenHi << 2) + (ES_1_normallyOpenHi << 3))) {
     flash_backup[149] = ES_0_normallyOpenLo + (ES_1_normallyOpenLo << 1) + (ES_0_normallyOpenHi << 2) + (ES_1_normallyOpenHi << 3);

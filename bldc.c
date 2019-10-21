@@ -164,7 +164,7 @@ extern float mzp_current;
 
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
-bldc_motor *bldc_cm = &bldc_motors[1];// fsta selected motor
+bldc_motor *bldc_cm = &bldc_motors[1];
 
 
 
@@ -554,7 +554,7 @@ void bldc_init(int LoadDefaults){
 #endif
 
   //initialize ADC
-  bldc_adcinit(); //fsta >>>>> preglej
+  bldc_adcinit();
 
 //*****initialize timers********
 
@@ -683,7 +683,7 @@ void bldc_ClearStatus() {
 int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to position
   if(motor > BLDC_MOTOR_COUNT)
     return -1;
-  //bldc_cm = &bldc_motors[motor]; // fsta selected motor
+  //bldc_cm = &bldc_motors[motor];
   bldc_motor *mptr = &bldc_motors[motor];
 
   if(mptr->status & BLDC_STATUS_ERR)
@@ -773,7 +773,7 @@ int bldc_Home(unsigned char motor) {  //execute homing
   if(motor>BLDC_MOTOR_COUNT)
     return -1;
 
-  bldc_cm = &bldc_motors[motor]; // fsta selected motor
+  bldc_cm = &bldc_motors[motor];
   bldc_motor *mptr = &bldc_motors[motor];
 
   if(mptr->status& BLDC_STATUS_ERR)
@@ -1010,12 +1010,10 @@ void getFocus(void){
 }
 
 int m_A_idle(){
-  //fsta return ((abs(motor_destA - motor_posA)<DIFF_LOW)&&(!motorA_moving()))?1:0;
   return ((abs(bldc_motors[0].target - bldc_motors[0].position) < 100 && (!(bldc_motors[0].state & BLDC_STATUS_ACTIVE))))?1:0;	
 }
 
 int m_B_idle(){
-  //fsta return ((abs(motor_destB - motor_posB)<DIFF_LOW)&&(!motorB_moving()))?1:0;
   return ((abs(bldc_motors[1].target - bldc_motors[1].position) < 100 && (!(bldc_motors[1].state & BLDC_STATUS_ACTIVE))))?1:0;	
 }
 
@@ -1173,8 +1171,6 @@ void Flag_check() {
 
 uint32_t end_time;
 uint32_t s_time = 0;
-// fsta TO DO !!!
-// MOTOR CONTROL FUNCTIONS
 
 void bldc_update_pwm(unsigned short value) {
  // if (value < 100)
@@ -1191,9 +1187,6 @@ void bldc_ClearHallIntRequest() {
 }
 
 int bldc_HomeSwitchActive(unsigned char motor , unsigned char switch_h_l) {
-//fsta
-//debug_printf("motor:%d ES_0_normallyOpenLo:%d ES_0_normallyOpenHi:%d ES_1_normallyOpenLo:%d ES_1_normallyOpenHi:%d switch_h_l:%d\n", motor,ES_0_normallyOpenLo,ES_0_normallyOpenHi,ES_1_normallyOpenLo,ES_1_normallyOpenHi,switch_h_l);
-
   if (motor == 0){
 
     if(!ES_0_normallyOpenLo && !switch_h_l)
@@ -1316,7 +1309,6 @@ void ActivateDrivers(int dir) {
     bldc_runtime = 0;
     bldc_pwm = 0;
     bldc_cm->status |= BLDC_STATUS_ACTIVE;
-    //fsta bldc_Comutate(0);
     bldc_Comutate(bldc_cm->index);
   }
 }

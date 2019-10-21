@@ -243,9 +243,6 @@ void USB_display(void) {
     if(screen_mux_B==2){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2d",cdate,time.date);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2d",cmonth,time.month);
-
-//fsta
-//      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%s (B%d)",cversion,VERSION,BldVer);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f (B%.3f)", cversion, ((float)swVersion.sw_version) / 1000.0, ((float)BOOT_VERSION) / 1000.0);
       
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2f",cUsolar,bldc_U(SUPPLY));
@@ -314,11 +311,11 @@ void USB_display(void) {
     }
     if(screen_mux_B==7){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cusolar_factor,usolar_factor);
-      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cimotor_factor_A,imotor_factor_A);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f", cInrush_ratioA, Mot_inrush_ratio_A);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4d",ccflags,cflags);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4f",clongitude,longitude);
 #ifndef DISABLE_MOTOR_B 
-      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cimotor_factor_B,imotor_factor_B);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f", cInrush_ratioB, Mot_inrush_ratio_B);
 #endif
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);                                                                                                 //imotor_factor
     }
@@ -563,7 +560,6 @@ void USB_display(void) {
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f", ctime_zone, time_zone);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt], "$%c%.lf", ctimeDst, time_dst);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt], "$%c%.2d/%.2d/%.4d %.2d:%.2d:%.2d", clastSync_time, lastSyncTime.date, lastSyncTime.month, lastSyncTime.year, lastSyncTime.hours, lastSyncTime.minutes, lastSyncTime.seconds);
-      //fsta
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
     }
 
@@ -704,14 +700,6 @@ void Chip_USB_Init(void)
 	usb_param.mem_size = USB_STACK_MEM_SIZE;
 
 	/* Set the USB descriptors */
-
-//fsta
-//debug_printf("%d %d %d\n", sizeof((char *)USB_DeviceDescriptor 18), sizeof((char *)USB_StringDescriptor),sizeof((char *)USB_FsConfigDescriptor)); 
-//debug_printf("%d %d %d\n", sizeof((ALIGNED(4))USB_DeviceDescriptor), sizeof((ALIGNED(4))USB_StringDescriptor),sizeof((ALIGNED(4))USB_FsConfigDescriptor)); 
-//debug_printf("%d %d %d\n", sizeof((uint8_t *)USB_DeviceDescriptor), sizeof((uint8_t *)USB_StringDescriptor),sizeof((uint8_t *)USB_FsConfigDescriptor)); 
-
-//sizeof(msg)/sizeof(uint8_t);
-
 	desc.device_desc = (uint8_t *) &USB_DeviceDescriptor[0];
 	desc.string_desc = (uint8_t *) &USB_StringDescriptor[0];
 	/* Note, to pass USBCV test full-speed only devices should have both
