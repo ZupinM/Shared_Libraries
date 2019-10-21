@@ -40,39 +40,6 @@
 
 #define BUFSIZE		1040
 
-//------------RS485 PIN DEFINITIONS---------------
-#define RS485_RXD_PORT 0
-#define RS485_RXD_PIN 27
-
-#define RS485_TXD_PORT 0
-#define RS485_TXD_PIN 29
-
-#define RS485_RTS_PORT 0  //DATA FLOW RS485
-#define RS485_RTS_PIN 28
-
-#define RS485_RXD RS485_RXD_PIN+32*RS485_RXD_PORT
-#define RS485_TXD RS485_TXD_PIN+32*RS485_TXD_PORT
-#define RS485_RTS RS485_RTS_PIN+32*RS485_RTS_PORT
-
-//---XBEE PIN DEFINITIONS----
-#define XBEE_RXD_PIN  5
-#define XBEE_RXD_PORT  0
-
-#define XBEE_TXD_PIN  6
-#define XBEE_TXD_PORT  0
-
-#define XBEE_RTS_PIN  11
-#define XBEE_RTS_PORT  1
-
-#define XBEE_CTS_PIN  38
-#define XBEE_CTS_PORT  0
-
-#define XBEE_RXD XBEE_RXD_PIN+32*XBEE_RXD_PORT
-#define XBEE_TXD XBEE_TXD_PIN+32*XBEE_TXD_PORT
-#define XBEE_RTS XBEE_RTS_PIN+32*XBEE_RTS_PORT
-#define XBEE_CTS XBEE_CTS_PIN+32*XBEE_CTS_PORT
-
-//------------------------------------------------
 
 /* RS485 mode definition. */
 #define RS485_NMMEN		(0x1<<0)
