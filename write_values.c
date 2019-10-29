@@ -220,13 +220,18 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     }
 
     case cmotor_speedA:{
-        motor_speedA = IntTemp;   //time zone
+        motor_speedA = IntTemp;
         break;
     }    
     case cmotor_speedB:{
-        motor_speedB = IntTemp;   //time zone
+        motor_speedB = IntTemp;
         break;
-    }     
+    }
+    
+    case cnumber_of_poles: {
+      number_of_poles = IntTemp * 2;
+      break;
+    }
 
     case cshow_angle_A: {       //ANGLE OF A AXIS
         if (!(bflags&(1<<time_enable))){
@@ -530,6 +535,9 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cmax_range_A:
       bldc_Motor(0)->max_position = FloatTemp;
       break;
+    case czero_offsetA:
+      bldc_Motor(0)->home_offset = FloatTemp;
+      break;
     case ccoordinate_mode_A:    coordinate_mode_A=FloatTemp; break;
     case cgeometry_mode_A:      {
         geometry_mode_A=FloatTemp;
@@ -538,8 +546,8 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cmax_Imotor_A:
       bldc_Motor(0)->I_limit = FloatTemp;
       break;
-    case cInrush_ratioA:      
-      bldc_Motor(0)->I_Inrush_ratio = FloatTemp; 
+    case cimotor_factor_A:
+      bldc_config()->IConvertRatio = FloatTemp;    
       break; 
   
     case chome_position_A:      if (strstr((char *)StringTemp,"off")) {home_position_A=1000; break;}     // 1000.0 se uporablja kot zastavica za onemogocenje osi, da se postavi v wind-safe pozicijo
@@ -565,6 +573,9 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cmax_range_B:
       bldc_Motor(1)->max_position = FloatTemp;
       break;
+    case czero_offsetB:
+      bldc_Motor(1)->home_offset = FloatTemp;
+      break;
     case ccoordinate_mode_B:    coordinate_mode_B=FloatTemp; break;
     case cgeometry_mode_B:      geometry_mode_B=FloatTemp; break; 
         //goref_Nday_cnt_B=0;                             //brisanje raznih registrov B osi
@@ -572,8 +583,8 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cmax_Imotor_B:
       bldc_Motor(1)->I_limit = FloatTemp;
       break;
-    case cInrush_ratioB:
-      bldc_Motor(1)->I_Inrush_ratio = FloatTemp;
+    case cimotor_factor_B:
+      bldc_config()->IConvertRatio = FloatTemp;
       break;
     case chome_position_B:      if (strstr((char *)StringTemp,"off")) {home_position_B=1000; break;}     // 1000.0 se uporablja kot zastavica za onemogocenje osi, da se postavi v wind-safe pozicijo
                                 else home_position_B=FloatTemp; break;      
@@ -582,27 +593,40 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
 
     case cNightMode_time:       NightMode_time=FloatTemp;      sun_schedule_recalc(); break;
     case cDayMode_time:         DayMode_time=FloatTemp;       sun_schedule_recalc();break;
-    case cusolar_factor:        usolar_factor=FloatTemp; break;
+    case cusolar_factor:
+      bldc_config()->UConvertRatio = FloatTemp;
+      break;
     case ccflags:               bldc_Stop(1);
                                 //if(GetMode())cflags=(int)FloatTemp&CFLAGS_SLAVE_MODE_MASK;
-                                        cflags=(int)FloatTemp;
-                                            if(cflags&(1<<swap_halls_A))
-                                                 bldc_SetInvertHall(0,1);
-                                            else bldc_SetInvertHall(0,0);
-                                            if(cflags&(1<<swap_halls_B))
-                                                 bldc_SetInvertHall(1,1);
-                                            else bldc_SetInvertHall(1,0);
+                                cflags=(int)FloatTemp;
+                                if(cflags&(1<<swap_halls_A))
+                                  bldc_SetInvertHall(0,1);
+                                else
+                                  bldc_SetInvertHall(0,0);
+                                if(cflags&(1<<swap_halls_B))
+                                  bldc_SetInvertHall(1,1);
+                                else
+                                  bldc_SetInvertHall(1,0);
 
-                                            if(cflags&(1<<SwapRotation_A))
-                                                 bldc_SetInvert(0,1);
-                                            else bldc_SetInvert(0,0);
-                                            if(cflags&(1<<SwapRotation_B))
-                                                 bldc_SetInvert(1,1);
-                                            else bldc_SetInvert(1,0);
-                                             
-                                            eeprom_write(SYS_VARS_EE1);
+                                if(cflags&(1<<SwapRotation_A))
+                                  bldc_SetInvert(0,1);
+                                else
+                                  bldc_SetInvert(0,0);
+                                if(cflags&(1<<SwapRotation_B))
+                                  bldc_SetInvert(1,1);
+                                else
+                                  bldc_SetInvert(1,0);
+                                 
+                                eeprom_write(SYS_VARS_EE1);
                                 break;
                               
+    case cnormally_close_es:
+      ES_0_normallyOpenLo = IntTemp & (1<<0);
+      ES_1_normallyOpenLo = (IntTemp & (1<<1)) >> 1;
+      ES_0_normallyOpenHi = (IntTemp & (1<<2)) >> 2;
+      ES_1_normallyOpenHi = (IntTemp & (1<<3)) >> 3;
+      eeprom_write(SYS_VARS_EE1);
+      break;
     case cslave_id:             slave_addr=FloatTemp, eeprom_write(SYS_VARS_EE1); break;
     //case cbuyflags:             change_buyFlags(IntTemp); cfg_wind_input(); break; //if (decrypt(box,IntTemp)) buyflags^=1<<(crypt_output&0x000000FF); break;        //CRYPTED:  MM AA AA xx, kjer xx pomeni kateri bit bo exor-an
     case crun_delay_home:       run_delay_home=FloatTemp; break;
@@ -638,26 +662,34 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case cVoltage_select_1:     voltage_select_1 = IntTemp; break;
         
     //S
-   case cOverTempShift:       OverTempShift=FloatTemp; break;
-   case cTime_out_of_focus:   Time_out_of_focus=FloatTemp; break;
+    case cOverTempShift:       OverTempShift=FloatTemp; break;
+    case cTime_out_of_focus:   Time_out_of_focus=FloatTemp; break;
     ///S
- //fsta  case cInrush_ratioA :       Mot_inrush_ratio_A = FloatTemp; break;
- //fsta  case cInrush_ratioB :       Mot_inrush_ratio_B = FloatTemp; break;
-   case cInrush_timeA:         Mot_inrush_time_A = FloatTemp; break;
-   case cInrush_timeB:         Mot_inrush_time_B = FloatTemp; break;
-   case cfocus_max_offset:     focus_max_offset  = FloatTemp; break;
+    case cInrush_ratioA:      
+      bldc_Motor(0)->I_Inrush_ratio = FloatTemp; 
+      break; 
+    case cInrush_ratioB:
+      bldc_Motor(1)->I_Inrush_ratio = FloatTemp;
+      break;
+    case cInrush_timeA:
+      bldc_Motor(0)->I_Inrush_time = FloatTemp;
+      break;
+    case cInrush_timeB:
+      bldc_Motor(1)->I_Inrush_time = FloatTemp;
+      break;
+    case cfocus_max_offset:     focus_max_offset  = FloatTemp; break;
    
-   case cdeviation_A  : deviation_A   = FloatTemp;  break;   
-   case cinclination_A: inclination_A = FloatTemp;  break;    
-   case cpanel_space_A: panel_space_A = FloatTemp;  break;   
-   case cpanel_width_A: panel_width_A = FloatTemp;  break;   
-   case cpanel_thick_A: panel_thick_A = FloatTemp;  break;    
+    case cdeviation_A  : deviation_A   = FloatTemp;  break;   
+    case cinclination_A: inclination_A = FloatTemp;  break;    
+    case cpanel_space_A: panel_space_A = FloatTemp;  break;   
+    case cpanel_width_A: panel_width_A = FloatTemp;  break;   
+    case cpanel_thick_A: panel_thick_A = FloatTemp;  break;    
    
-   case cdeviation_B  : deviation_B  =FloatTemp;  break;   
-   case cinclination_B: inclination_B =FloatTemp;  break;    
-   case cpanel_space_B: panel_space_B=FloatTemp;  break;   
-   case cpanel_width_B: panel_width_B=FloatTemp;  break;   
-   case cpanel_thick_B: panel_thick_B=FloatTemp;  break;   
+    case cdeviation_B  : deviation_B  =FloatTemp;  break;   
+    case cinclination_B: inclination_B =FloatTemp;  break;    
+    case cpanel_space_B: panel_space_B=FloatTemp;  break;   
+    case cpanel_width_B: panel_width_B=FloatTemp;  break;   
+    case cpanel_thick_B: panel_thick_B=FloatTemp;  break;   
    
    
    //heliostat

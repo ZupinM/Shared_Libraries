@@ -95,13 +95,6 @@ extern time_t lastSyncTime;
 // CanRxMsg RxMessage;
  uint32_t debug_multiplex_can;	
 
-
-
-
-
-
-
-
  extern float parameters [N_parameters];
 extern float parameters_fixed [N_parameters_fixed];
  uint32_t cflags;
@@ -125,9 +118,6 @@ extern float parameters_fixed [N_parameters_fixed];
  unsigned int error_hall_B;	  	
  unsigned int error_cable_B;		
  extern unsigned int backup_timeout;
- uint32_t ID_number_1;
- uint32_t ID_number_2;
- uint32_t ID_number_3;
  volatile int delay_reset = 0;
  extern uint32_t green_led;
  unsigned int FocusMiddleA,FocusMiddleB;
@@ -146,6 +136,15 @@ extern double PM_elevation;
 
 extern const Version swVersion;
 
+extern unsigned char ES_0_normallyOpenLo;
+extern unsigned char ES_0_normallyOpenHi;
+extern unsigned char ES_1_normallyOpenLo;
+extern unsigned char ES_1_normallyOpenHi;
+
+extern volatile unsigned int bldc_Speed;
+extern volatile unsigned int number_of_poles;
+
+extern unsigned int SN[4];
 
 void USART_To_USB_Send_Data(uint8_t* ascii_string, uint32_t count_in){
 
@@ -154,10 +153,6 @@ void USART_To_USB_Send_Data(uint8_t* ascii_string, uint32_t count_in){
         }    
 
 }
-
-
-
-
 
 
 /***********************************************************
@@ -246,9 +241,7 @@ void USB_display(void) {
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f (B%.3f)", cversion, ((float)swVersion.sw_version) / 1000.0, ((float)BOOT_VERSION) / 1000.0);
       
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2f",cUsolar,bldc_U(SUPPLY));
-      //buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d",cID_number_1,ID_number_1);
-     // buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d",cID_number_2,ID_number_2);
-    //  buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d",cID_number_3,ID_number_3);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%08X-%08X-%08X-%08X", cID_number, SN[0], SN[1], SN[2], SN[3]);
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
     }
 
@@ -311,13 +304,15 @@ void USB_display(void) {
     }
     if(screen_mux_B==7){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cusolar_factor,usolar_factor);
-      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f", cInrush_ratioA, Mot_inrush_ratio_A);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cimotor_factor_A,imotor_factor_A);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4d",ccflags,cflags);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4d", cnormally_close_es,
+        ES_0_normallyOpenLo + (ES_1_normallyOpenLo << 1) + (ES_0_normallyOpenHi << 2) + (ES_1_normallyOpenHi << 3));
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4f",clongitude,longitude);
 #ifndef DISABLE_MOTOR_B 
-      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f", cInrush_ratioB, Mot_inrush_ratio_B);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cimotor_factor_B,imotor_factor_B);
 #endif
-      USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);                                                                                                 //imotor_factor
+      USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
     }
 
     if(screen_mux_B==8){
@@ -378,6 +373,7 @@ void USB_display(void) {
        
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.0f",cmin_range_A,min_range_A);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2f",cmax_Imotor_A,max_Imotor_A);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2f", czero_offsetA, zero_offsetA);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cSpacePanelB,SpacePanelB);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cWidePanelB,WidePanelB);
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
@@ -391,6 +387,7 @@ void USB_display(void) {
       
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.0f",cmin_range_B,min_range_B);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2f",cmax_Imotor_B,max_Imotor_B);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2f", czero_offsetB, zero_offsetB);
 #endif
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cDayMode_time,DayMode_time);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cNightMode_time,NightMode_time);
@@ -399,7 +396,7 @@ void USB_display(void) {
     
     
     if(screen_mux_B==14){
-      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cInrush_ratioA,Mot_inrush_ratio_A);  
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cInrush_ratioA,Mot_inrush_ratio_A);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.0f",cInrush_timeA,Mot_inrush_time_A);
 #ifndef DISABLE_MOTOR_B              
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cInrush_ratioB,Mot_inrush_ratio_B);
@@ -570,9 +567,14 @@ void USB_display(void) {
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt], "$%c%.2f%c(PM), %.2f%c(AE)", chour_angle, PM_azimuth, 248, AE_azimuth, 248);		
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt], "$%c%.2f%c(PM), %.2f%c(AE)", celevation, PM_elevation, 248, AE_elevation, 248);
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
-      screen_mux_B = 0;
-    }                   
+    }      
     
+    if(screen_mux_B==26){
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbldc_Speed, bldc_Speed);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cnumber_of_poles, number_of_poles / 2);
+      USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
+      screen_mux_B = 0;
+    }
     screen_mux_A=0;
   }
 
@@ -715,22 +717,6 @@ void Chip_USB_Init(void)
 
 		/* Init VCOM interface */
 		ret = vcom_init(g_hUsb, &desc, &usb_param);
-
-/*
-//fsta
-debug_printf("USB: %x %x %x %x %x %x %x %x \n",
-usb_param.virt_to_phys,
-usb_param.usb_reg_base,
-usb_param.reserved_sbz,
-usb_param.pad0,
-usb_param.mem_size,
-usb_param.mem_base,
-usb_param.max_num_ep,
-usb_param.cache_flush);
-*/
-
-
-
 
 		if (ret == LPC_OK) {
 			/*  enable USB interrupts */

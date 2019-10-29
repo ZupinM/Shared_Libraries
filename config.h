@@ -81,8 +81,7 @@ Header file za SunTracer
 #define SF_ENDSW_A_LO_PRESSED		(1<<19)		//end switch pressed A - LO
 #define SF_ENDSW_A_HI_PRESSED		(1<<20)		//end switch pressed A - HI
 #define SF_ENDSW_B_LO_PRESSED		(1<<21)		//end switch pressed B - LO
-//fsta #define SF_ENDSW_B_HI_PRESSED		(1<<18)		//end switch pressed B - HI
-#define SF_ENDSW_B_HI_PRESSED		(1<<22)		//end switch pressed B - HI
+#define SF_ENDSW_B_HI_PRESSED		(1<<18)		//end switch pressed B - HI
 //fsta#define SF_HALL_WIRING_A		(1<<22)
 #define SF_HALL_WIRING_A		(1<<23)
 //fsta#define SF_HALL_WIRING_B		(1<<23)

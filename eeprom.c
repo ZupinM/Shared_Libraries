@@ -205,6 +205,8 @@ void update_flash_backup(){
   ES_0_normallyOpenHi = (((unsigned int)flash_backup[149]) >> 2) & (1 << 0);
   ES_1_normallyOpenHi = (((unsigned int)flash_backup[149]) >> 3) & (1 << 0);
 
+  number_of_poles = (unsigned int)flash_backup[150];
+
   if(f_pcb_version == 0)
     f_pcb_version = 0x1E4601;
 
@@ -534,6 +536,11 @@ void eeprom_write(unsigned int write_address) {
 
   if(flash_backup[149] != (float)(ES_0_normallyOpenLo + (ES_1_normallyOpenLo << 1) + (ES_0_normallyOpenHi << 2) + (ES_1_normallyOpenHi << 3))) {
     flash_backup[149] = ES_0_normallyOpenLo + (ES_1_normallyOpenLo << 1) + (ES_0_normallyOpenHi << 2) + (ES_1_normallyOpenHi << 3);
+    upgrExe = 1;
+  }
+
+  if(flash_backup[150] != (float)number_of_poles) {
+    flash_backup[150] = number_of_poles;
     upgrExe = 1;
   }
 

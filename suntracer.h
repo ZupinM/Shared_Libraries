@@ -24,6 +24,7 @@
 #define unique_ID_address   0x1FFFF7E8      //unique number for every single uC
 #define BldVersionAddress   0x08000150      //v bootloaderju naslov, kjer je napisana verzija bootloaderja
 #define ADC1_DR_Address     0x4001244C
+//fsta
 #define ZEROSPEED           2000            //ko se motor ne vrti, je speed==ZEROSPEED
 #define ZEROSPEED_S         4000
 #define ZEROSPEED_VS        8000
@@ -31,6 +32,7 @@
 #define ACCEL_LOW           30              //pospesek: 30-tiv27c, 60-tiv26a        //near destination_A - slow move (startup=1900ms)
 #define ACCEL_HIGH          3
 #define DIFF_HIGH           150             //razlika v impulzih, da starta z ACCEL_HIGH (funkcija: motor_check_position)
+//fsta
 #define DIFF_LOW            50              //razlika v impulzih, da starta z ACCEL_LOW, ali pa sploh ne 
 #define DIFF_LOW_S          5
 #define DIFF_LOW_VS         0
@@ -206,23 +208,22 @@ extern float flash_backup[0x100];
 #define N_parameters 105
 extern float parameters [N_parameters];
 
-#define A1_A                  flash_backup[58]   //factors for different geometric
-#define A2_A                  flash_backup[59]
-#define A3_A                  flash_backup[60]
-#define A4_A                  flash_backup[61]
-#define A5_A                  flash_backup[62]
-#define A6_A                  flash_backup[63]   //angles for different geometric
-#define B1_A                  flash_backup[64]
-#define B2_A                  flash_backup[65]
+#define A1_A                  flash_backup[158]   //factors for different geometric
+#define A2_A                  flash_backup[159]
+#define A3_A                  flash_backup[160]
+#define A4_A                  flash_backup[161]
+#define A5_A                  flash_backup[162]
+#define A6_A                  flash_backup[163]   //angles for different geometric
+#define B1_A                  flash_backup[164]
+#define B2_A                  flash_backup[165]
 #define gear_ratio_A        flash_backup[27]   //gear ratio factor for V axis
 #define max_range_A         flash_backup[21]  //max impulses @ moving range=96 (96*59,5=5700)
 #define min_range_A         flash_backup[20]
-#define coordinate_mode_A     flash_backup[66]
-#define latitude              flash_backup[67]  //users latitude
-#define reserved0             flash_backup[68]  //time, when returning back to home (east)
+#define coordinate_mode_A     flash_backup[166]
+#define latitude              flash_backup[167]  //users latitude
 #define usolar_factor       flash_backup[14]  //U solar voltage
 #define max_Imotor_A        flash_backup[23]
-//fsta#define imotor_factor_A     flash_backup[15]  //I motor current (725.5 means 0.0007255V/step)
+#define imotor_factor_A     flash_backup[15]  //I motor current (725.5 means 0.0007255V/step)
 #define run_delay_home        flash_backup[69]  //zamik, da vsi na enkrat ne pozenejo za home (v sekundah)
 #define run_delay             flash_backup[70]  //zamik, da vsi na enkrat ne pozenejo pri sledenju (v sekundah)
 #define interval              flash_backup[71]  //interval pomika v sekundah
@@ -245,7 +246,7 @@ extern float parameters [N_parameters];
 #define home_position_B       flash_backup[85]  //kam se bo zvecer vrnila os B (v stopinjah)
 #define longitude             flash_backup[57]
 #define max_Imotor_B        flash_backup[44]
-//fsta#define imotor_factor_B     flash_backup[15]
+#define imotor_factor_B     flash_backup[15]
 #define rtc_correction        flash_backup[86]
 #define goref_Nday_A          flash_backup[87]
 #define goref_Nday_B          flash_backup[88]
@@ -313,7 +314,6 @@ extern float parameters [N_parameters];
 
 #define modbus_timeout_posA  flash_backup[26]
 #define modbus_timeout_posB  flash_backup[47]
-//#define modbus_timeout          flash_backup[96]
 #define modbus_timeoutID        flash_backup[134]
 
 #define modbus_m_enabled        flash_backup[135]
@@ -340,6 +340,7 @@ extern float parameters [N_parameters];
 #define geometry_mode_B     flash_backup[146]  //izbrana geometrija druge osi
 
 #define overvoltageOcc      flash_backup[148]
+
 //#define BootUpgradeFlag   parameters_fixed[6]  //zastavica za avtomatsko posodobitev iz Heliosa
 
 
