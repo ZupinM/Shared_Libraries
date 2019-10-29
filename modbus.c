@@ -62,7 +62,6 @@ extern unsigned int backup_timeout;			// zakasnjen vpis v flash - backup
 extern unsigned int modbus_indicator;			// stevec dolzine utripa ob rs485 sprejetju stringa
 
 extern volatile unsigned int           bldc_Speed;     //RPM		
-extern volatile unsigned int           number_of_poles;
 
 extern unsigned int store_in_flash;
 
@@ -469,16 +468,19 @@ void modbus_cmd () {
           break;		
         }		
         case MCMD_R_NPoles: {		
-          read_int_buf[0] = number_of_poles;		
-          mcmd_read_int(1, slave_addr);		
+          read_int_buf[0] = number_of_poles / 2;		
+          mcmd_read_int(1, slave_addr);
           break;		
         }		
-        case MCMD_W_NPoles: {							
-          number_of_poles = mcmd_write_int(1,24);		
-          backup_timeout = 200;			
-          break;		
+        case MCMD_W_NPoles: {
+          Utemp = mcmd_write_int(0, 50);         //omejitev vpisa
+          if (m_ack_state == 0) {
+            number_of_poles = Utemp * 2;
+            eepromUpdate = 1;
+            backup_timeout = 200;                     //4 sekundi zatem backup v flash
+          }			 
+          break;	
         }
-
            
         // SERIAL NUMBERS
         case MCMD_R_serial_numbers: {			   

@@ -50,9 +50,7 @@
 #define cusolar_factor          84      //S2
 #define cimotor_factor_A        85      //S2
 #define ccflags                 86      //S3 -
-#define cID_number_1            87      //S5
-#define cID_number_2            88      //S5
-#define cID_number_3            89      //S5
+#define cID_number              87      //S5
 #define cslave_id               90      //S3
 #define cbuyflags               91      //S3
 #define crun_delay_home         92      //S3
@@ -171,6 +169,11 @@
 #define chour_angle        190
 #define celevation         191
 
+#define czero_offsetA      192
+#define czero_offsetB      193
+
+#define cnormally_close_es 194
+
 #define cVoltage_select_0	195
 #define cVoltage_select_1	196
 #define cUVccHALL_0			197
@@ -181,6 +184,9 @@
 #define clock_pin    201
 #define cUnlock      202
 #define cLock        203
+
+#define cbldc_Speed        204
+#define cnumber_of_poles   205
 
 
 

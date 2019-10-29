@@ -51,6 +51,8 @@ extern unsigned char ES_0_normallyOpenHi;
 extern unsigned char ES_1_normallyOpenLo;
 extern unsigned char ES_1_normallyOpenHi;
 
+extern volatile unsigned int number_of_poles;
+
 void flash_read (unsigned int read_address);
 void eeprom_read (unsigned int read_address);
 void update_flash_backup();
