@@ -468,14 +468,14 @@ void modbus_cmd () {
           break;		
         }		
         case MCMD_R_NPoles: {		
-          read_int_buf[0] = number_of_poles / 2;		
+          read_int_buf[0] = number_of_poles;		
           mcmd_read_int(1, slave_addr);
           break;		
         }		
         case MCMD_W_NPoles: {
           Utemp = mcmd_write_int(0, 50);         //omejitev vpisa
           if (m_ack_state == 0) {
-            number_of_poles = Utemp * 2;
+            number_of_poles = Utemp;
             eepromUpdate = 1;
             backup_timeout = 200;                     //4 sekundi zatem backup v flash
           }			 

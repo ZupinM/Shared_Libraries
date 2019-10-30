@@ -571,7 +571,7 @@ void USB_display(void) {
     
     if(screen_mux_B==26){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbldc_Speed, bldc_Speed);
-      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cnumber_of_poles, number_of_poles / 2);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cnumber_of_poles, number_of_poles);
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
       screen_mux_B = 0;
     }

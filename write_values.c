@@ -229,7 +229,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     }
     
     case cnumber_of_poles: {
-      number_of_poles = IntTemp * 2;
+      number_of_poles = IntTemp;
       break;
     }
 
