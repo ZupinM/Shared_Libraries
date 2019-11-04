@@ -115,7 +115,7 @@ float battery_voltage = 3;
 float temperature;
 
 
-volatile int                    bldc_Speed;     //RPM
+uint64_t                        bldc_Speed;     //RPM
 volatile unsigned int           number_of_poles = 2;
 volatile unsigned int           speed_sample_counter;
 volatile unsigned int           bldc_Speed_raw; //ticks from comutation to comutation
@@ -1765,7 +1765,7 @@ void bldc_Comutate(unsigned char motor){
       bldc_Speed_raw += LPC_SCT1->COUNT;
       if(++speed_sample_counter >= 6 * number_of_poles){
         speed_sample_counter = 0;
-        bldc_Speed = (6 * 6 * pow(number_of_poles, 2) * (SystemCoreClock/2)) / bldc_Speed_raw;		
+        bldc_Speed =  (60ULL * SystemCoreClock)  / bldc_Speed_raw;	    
         bldc_Speed_raw = 0;
       }
     }
