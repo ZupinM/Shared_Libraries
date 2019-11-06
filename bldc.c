@@ -152,6 +152,7 @@ unsigned char hall_detect = 0;
 unsigned char motor_a_disconnected = 0;
 unsigned char motor_b_disconnected = 0;
 unsigned char commutation_counter = 0;
+extern int bounce_stop;
 
 
 float MOTOR_START_VOLTAGE;
@@ -183,7 +184,7 @@ unsigned char ButtonStates() {
     val |= 1<<1;
   #ifdef BUTTON3_PORT
   if(~LPC_GPIO_PORT->PIN[BUTTON3_PORT] & (1 << BUTTON3_PIN))
-    val |= 1<<3;
+    val |= 1<<2;
   #endif
   return (val & 0x07);
 }
@@ -1155,7 +1156,7 @@ void Flag_check() {
 
     val = (bldc_motors[i].target - bldc_motors[i].position);
 
-    if(val >= -bldc_motors[i].pid.deadband && val <= bldc_motors[i].pid.deadband)
+    if(val >= (-bldc_motors[i].pid.deadband -bounce_stop) && val <= (bldc_motors[i].pid.deadband + bounce_stop))
       bldc_motors[i].status &= ~(BLDC_STATUS_MOVING_OUT | BLDC_STATUS_MOVING_IN);
     else {
       if(val>0) {
