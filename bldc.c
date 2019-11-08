@@ -1173,8 +1173,6 @@ void Flag_check() {
     }
   }
 
-  //fsta
-  // no moving - set RPM to 0
   if(!(bldc_motors[0].status & BLDC_STATUS_MOVING_IN) && !(bldc_motors[0].status & BLDC_STATUS_MOVING_OUT) &&
     !(bldc_motors[1].status & BLDC_STATUS_MOVING_IN) && !(bldc_motors[1].status & BLDC_STATUS_MOVING_OUT))
     bldc_Speed = 0;
@@ -1637,7 +1635,6 @@ void bldc_process() {
   if(bldc_HomeSwitchActive(bldc_cm->index,0) && bldc_cm->ctrl == BLDC_CTRL_TRACKING && bldc_cm->position > bldc_position_to_pulses(bldc_cm->index, bldc_cm->end_switchDetect - 0.1)){
     SetEventParameters(bldc_cm->index);
     ActivateDrivers(0);
-//fsta    bldc_cm->status|= BLDC_STATUS_ERR | BLDC_STATUS_ENDSWITCH_ERROR;
     bldc_cm->status|= BLDC_STATUS_ENDSWITCH_ERROR;
     return;
   }
@@ -1645,7 +1642,6 @@ void bldc_process() {
     if(bldc_HomeSwitchActive(bldc_cm->index,1) && bldc_cm->ctrl == BLDC_CTRL_TRACKING && bldc_cm->position > bldc_position_to_pulses(bldc_cm->index, bldc_cm->end_switchDetect - 0.1)){
     SetEventParameters(bldc_cm->index);
     ActivateDrivers(0);
-//fsta     bldc_cm->status|= BLDC_STATUS_ERR | BLDC_STATUS_ENDSWITCH_ERROR;
     bldc_cm->status|= BLDC_STATUS_ENDSWITCH_ERROR;
     return;
   }
