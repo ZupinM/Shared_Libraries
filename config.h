@@ -82,20 +82,12 @@ Header file za SunTracer
 #define SF_ENDSW_A_HI_PRESSED		(1<<20)		//end switch pressed A - HI
 #define SF_ENDSW_B_LO_PRESSED		(1<<21)		//end switch pressed B - LO
 #define SF_ENDSW_B_HI_PRESSED		(1<<18)		//end switch pressed B - HI
-//fsta#define SF_HALL_WIRING_A		(1<<22)
 #define SF_HALL_WIRING_A		(1<<23)
-//fsta#define SF_HALL_WIRING_B		(1<<23)
 #define SF_HALL_WIRING_B		(1<<24)
-//fsta #define WARNING_ENDSW_A_PRESSED	        (1<<24)
-//fsta #define WARNING_ENDSW_B_PRESSED         (1<<25)
-//fsta#define WARNING_OVERVOLTAGE_OCCURED		(1<<26)
 
 //mzp
-//fsta#define SF_TRACKING_ENABLED		(1<<27)
 #define SF_TRACKING_ENABLED		(1<<25)
-//fsta#define SF_SNOW_MODE			(1<<28)
 #define SF_SNOW_MODE			(1<<26)
-//fsta#define SF_WIND_MODE			(1<<31)
 #define SF_WIND_MODE			(1<<27)
 
 

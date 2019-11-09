@@ -90,12 +90,6 @@ extern unsigned int diff_lowA, diff_lowB;
 
 extern uint8_t slave_addr;
 
-//fsta
-//fsta extern int resetEnable;
-
-//extern NVIC_InitTypeDef NVIC_InitStructurBKP_DR5e;
-
-
 ///////////////////////////////////////////////
 
 void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsigned char *StringTemp){
@@ -357,10 +351,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
                         break;
                   }
                   case 's': {
-                        //RMeasure_Stop();
-                        //bldc_manual(1);  // mzp
                         bldc_Stop(1);
-  //fsta                      store_in_flash = 100;
                         break;
                   }
             }
@@ -420,23 +411,12 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
 
     case cboot: {
 
-//fsta
-//debug_printf("StringTemp:%s\n",StringTemp);
-
         if (strncmp((char *)StringTemp, "resetstart", 10) == 0) {               //DEBUG okno
           delay_reset = 1000;
 
-//fsta
-//debug_printf("resetstart 11111 %s\n", StringTemp);
-//fsta           resetEnable = 1;
-
         } else if (strncmp((char *)StringTemp, "reset", 5) == 0) {               //DEBUG okno
-        
-
-//            void (*boot_entry)(void);
 
             delay_reset = 1000;           //1000 * 1ms = 1s, da Helios zapre COM port
-    //fsta        while (delay_timer!=0){}
 
             bflags |= (1 << BootUpdate);                                //postavi zastavico za avtomatic update v BKP register.
             
@@ -447,71 +427,6 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
 
 
             Chip_SYSCTL_PowerDown(SYSCTL_POWERDOWN_USBPLL_PD);
-
-//LPC_SYSCON->PDRUNCFG |= (1 < 23);
-//LPC_SYSCON->SYSAHBCLKCTRL1 &= ~(1 < 23);
-
-
-	/* Set USB PLL input to main oscillator
-	Chip_Clock_SetUSBPLLSource(SYSCTL_PLLCLKSRC_MAINOSC);
-	/* Setup USB PLL  (FCLKIN = 12MHz) * 4 = 48MHz
-	   MSEL = 3 (this is pre-decremented), PSEL = 1 (for P = 2)
-	   FCLKOUT = FCLKIN * (MSEL + 1) = 12MHz * 4 = 48MHz
-	   FCCO = FCLKOUT * 2 * P = 48MHz * 2 * 2 = 192MHz (within FCCO range)
-	Chip_Clock_SetupUSBPLL(2, 1);
-
-	/* Powerup USB PLL
-	Chip_SYSCTL_PowerUp(SYSCTL_POWERDOWN_USBPLL_PD);
-
-	/* Wait for PLL to lock
-	while (!Chip_Clock_IsUSBPLLLocked()) {}
-
-	/* enable USB main clock
-	Chip_Clock_SetUSBClockSource(SYSCTL_USBCLKSRC_PLLOUT, 1);
-	/* Enable AHB clock to the USB block.
-	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_USB);
-	/* power UP USB Phy 
-	Chip_SYSCTL_PowerUp(SYSCTL_POWERDOWN_USBPHY_PD);
-	/* Reset USB block 
-	Chip_SYSCTL_PeriphReset(RESET_USB);
-*/
-
-
-
-
-
-            //BKP_WriteBackupRegister(BKP_DR5,bflags);
-
-            //GPIO_SetBits(GPIOB,GPIO_Pin_12);                       
-       //     LPC_USB->DEVCMDSTAT &= ~(1<<16); //izkljuci USB pull-up
-            //PowerOff();                                             //Handles USB switch-off conditions
-            //RCC_APB1PeriphResetCmd(RCC_APB1Periph_USB, ENABLE);     //reset USB
-            //RCC_APB1PeriphResetCmd(RCC_APB1Periph_USB, DISABLE);
-            //RCC_APB1PeriphClockCmd(RCC_APB1Periph_USB, DISABLE);    //izkljuci USB clock
-
-            // IWDG timeout equal to 2s (the timeout may varies due to LSI frequency dispersion)
-            //IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable); //Enable write access to IWDG_PR and IWDG_RLR registers
-            //IWDG_SetPrescaler(IWDG_Prescaler_128);        //IWDG counter clock: 40KHz(LSI) / 128 = 312 Hz
-            //IWDG_SetReload(620);                          //Set counter reload value to 620
-            //IWDG_ReloadCounter();                         //Reload IWDG counter
-            //IWDG_Enable();                                //Enable IWDG (the LSI oscillator will be enabled by hardware)
-
-//fsta
-  //        flags |= (1 << reset_it);
-    //      resetEnable = 1;
-//fsta
-//debug_printf("reset 11111 %s\n", StringTemp);
-       //   reset_status = RESET_MANUAL;
-//fsta
-
-
-    //fsta        while (1);      //reset
-
-
-
-
-//            boot_entry = (void (*)(void)) *(unsigned*) 0x08000004;       //skoci, kamor kaze reset vektor v bootu
-//            boot_entry();
 
         }
         break;
@@ -766,20 +681,9 @@ void write_value_limit(void){
 
     if (max_Imotor_A>10.0)     max_Imotor_A=10.0;   //najvec 10A
     if (max_Imotor_B>10.0)     max_Imotor_B=10.0;
-  //fsta  if (imotor_factor_A>110.0) imotor_factor_A=110.0;       //A: I motor factor 60...100
-  //fsta  if (imotor_factor_A<50.0)  imotor_factor_A=50.0;
-  //fsta  if (imotor_factor_B>110.0) imotor_factor_B=110.0;       //B: I motor factor 60...100
-  //fsta  if (imotor_factor_B<50.0)  imotor_factor_B=50.0;
 
-   
-    
-    //if (min_range_A>1000) goref_Nday_A=0;       //ce je omejitev min. imp., ne sme iti home. Razen pod 1000 impulzi, ki se tretira kot izogib pritisku koncnega stikala (kadar se to želi)
-    //if (min_range_B>1000) goref_Nday_B=0;
-
-    //if(max_range_A<1000) max_range_A=1000;                      //absolutne omejitve ranga
     if(min_range_A>max_range_A) min_range_A=max_range_A-1;
 
-    //if(max_range_B<1000) max_range_B=1000;                      //absolutne omejitve ranga
     if(min_range_B>max_range_B) min_range_B=max_range_B-1;
 
     if(focus_max_offset > 10) focus_max_offset = 10.0;

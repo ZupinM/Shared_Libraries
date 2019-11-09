@@ -24,7 +24,7 @@
 #define unique_ID_address   0x1FFFF7E8      //unique number for every single uC
 #define BldVersionAddress   0x08000150      //v bootloaderju naslov, kjer je napisana verzija bootloaderja
 #define ADC1_DR_Address     0x4001244C
-//fsta
+
 #define ZEROSPEED           2000            //ko se motor ne vrti, je speed==ZEROSPEED
 #define ZEROSPEED_S         4000
 #define ZEROSPEED_VS        8000
@@ -32,7 +32,6 @@
 #define ACCEL_LOW           30              //pospesek: 30-tiv27c, 60-tiv26a        //near destination_A - slow move (startup=1900ms)
 #define ACCEL_HIGH          3
 #define DIFF_HIGH           150             //razlika v impulzih, da starta z ACCEL_HIGH (funkcija: motor_check_position)
-//fsta
 #define DIFF_LOW            50              //razlika v impulzih, da starta z ACCEL_LOW, ali pa sploh ne 
 #define DIFF_LOW_S          5
 #define DIFF_LOW_VS         0
@@ -322,10 +321,9 @@ extern float parameters [N_parameters];
 #define lastSync_date           flash_backup[137]
 #define lastSync_time           flash_backup[138]
 #define lastSync_year           flash_backup[139]
-//>>fsta
+
 #define motor_speedA            flash_backup[140]   // 0 - normal, 1 - slow, 2 - wery slow
 #define motor_speedB            flash_backup[141]
-//<<fsta
 
 #define ADDR_parameters_fixed  0x0801F800      //naslov skritih parametrov v flashu (127. predzadnji page)
 //float parameters_fixed [];

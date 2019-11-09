@@ -193,7 +193,6 @@ void modbus_cmd () {
     crc_calc = modbus_crc((uint8_t *)UARTBuffer, UARTCount, CRC_NORMAL);
 
     if (crc_calc == 0) {
-     //fsta baudrate_timeout = 0;
       if(transceiver == NONE)
         baudrate_timeout = 1;
       rxcnt = UARTCount - 2;
@@ -202,9 +201,6 @@ void modbus_cmd () {
 
       m_ack_state=0;
       modbus_cnt=0;             //no_modbus timeout
-
-//fsta
-//debug_printf("cmd: %.2x\n", UARTBuffer[1]);
 
       if(((UARTBuffer[0] == LoRa_id ||                       // slaveID or broadcast(0x0) for SN setting, set settings
             UARTBuffer[0] == 0x00 ||
@@ -386,19 +382,14 @@ void modbus_cmd () {
         // reset 
         case MCD_W_reset: {					 	
           ack_reply();
-          //fsta flags |= (1 << reset_it);
           delay_reset = 10;
 
           reset_status = RESET_MANUAL;
-
-//fsta           resetEnable = 1;
 
           break;
         }
         // R STATUS
         case MCMD_R_status: {
-
-//fstadebug_printf("tracker_status: %x\n",tracker_status);                                       
 
           read_int_buf[0] = tracker_status;
           read_int_buf[1] = tracker_exstatus;
@@ -1271,8 +1262,6 @@ void modbus_cmd () {
 
         case MCMD_R_All_PARAM: {
 
-//fstadebug_printf("tracker_statusA1: %x\n",tracker_status);
-
           float temp;					
           bldc_motor *mot= bldc_Motor(0);
           bldc_motor *motB= bldc_Motor(1);
@@ -1434,8 +1423,6 @@ void modbus_cmd () {
           else if (uartMode == UART_MODE_RS485) {
             memcpy((char *)UARTBuffer0, (char *)UARTBuffer, BUFSIZE);
             UART0Send( (uint8_t *)UARTBuffer0, number_TX_bytes );
-//fsta
-//debug_printf("id:%#02x crc:%d cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x length:%u  \n" , UARTBuffer0[0], crc_calc2, UARTBuffer0[1], UARTBuffer0[2], UARTBuffer0[3], UARTBuffer0[4], UARTBuffer0[5], UARTBuffer0[6], UARTBuffer0[7], number_TX_bytes);
 
             UARTCount0 = 0;
           }
@@ -1777,13 +1764,11 @@ void modbus_cmd1() {
             break;
           }
 
-//fsta
           default: {  
             UARTCount1  = 0;
             number_TX_bytes1 = 0;
             return;
           }
-//fsta
 
         }
       }
@@ -1831,8 +1816,7 @@ void modbus_cmd1() {
                   UARTBuffer1[1] == INTCOM_LORA_SET_ID_BY_SN || // set LoRa ID
                   UARTBuffer1[1] == INTCOM_LORA_GET_SN_BY_ID || // get LoRa SN
                   UARTBuffer1[1] == INTCOM_LORA_GET_RSSI)       // get LoRa RSSI
-               //fsta )) {
-               ) ){//|| mode == MODE_ERROR) { // error answer  // fsta 
+               ) ){
 
          crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, number_TX_bytes1, CRC_NORMAL);
          UARTBuffer1[number_TX_bytes1++] = crc_calc1 & 0xFF;
@@ -1876,12 +1860,7 @@ void modbus_cmd2() {
     crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, UARTCount0, CRC_NORMAL);
     crc_calc1 = modbus_crc((uint8_t *)UARTBuffer0, UARTCount0, CRC_BOOT);
 
-//fsta
-//if(UARTBuffer2[1]==0x78)  
-//debug_printf("cmd2 id:%#02x crc:%d cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x length:%u  \n" , UARTBuffer2[0], crc_calc2, UARTBuffer2[1], UARTBuffer2[2], UARTBuffer2[3], UARTBuffer2[4], UARTBuffer2[5], UARTBuffer2[6], UARTBuffer2[7], UARTCount2);
-
     if(crc_calc2 == 0)
-    // fsta baudrate_timeout = 0;
       if(transceiver == NONE)
         baudrate_timeout = 1;  
 
@@ -1932,9 +1911,6 @@ void modbus_cmd2() {
   RX from RS485 (positioner) forwarding to XBEE (Sigma)
 ************************************************************/
 void modbus_cmd3() {
-//fsta
-//debug_printf("modbus_cmd3: %.2x %.2x %.2x %.2x %d\n",UARTBuffer0[0], UARTBuffer0[1], UARTBuffer0[2], UARTBuffer0[3], UARTCount0);
-
   memcpy((char *)UARTBuffer1, (char *)UARTBuffer0, BUFSIZE);
   xbLength = xbSendPacketPrepare((char *)UARTBuffer1, UARTCount0);
 
@@ -2062,10 +2038,6 @@ void mcmd_read_int(unsigned int num_int, uint8_t addr) { 		//vec int stevil "num
     num_int--;
     i++;
   } while (num_int != 0);
-
-//fsta
-//if(UARTBuffer[1]==0x78)
-//debug_printf("%x %x %x %x %x %x %x %x %x %x %x %x %x\n",UARTBuffer[0],UARTBuffer[1],UARTBuffer[2],UARTBuffer[3],UARTBuffer[4],UARTBuffer[5],UARTBuffer[6],UARTBuffer[7],UARTBuffer[8],UARTBuffer[9],UARTBuffer[10],UARTBuffer[11],UARTBuffer[12]);
 
   crc_calc = modbus_crc((uint8_t *)UARTBuffer, j, CRC_NORMAL);
   UARTBuffer[j++] = crc_calc & 0xFF;
