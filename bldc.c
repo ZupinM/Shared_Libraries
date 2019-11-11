@@ -526,6 +526,11 @@ void bldc_init(int LoadDefaults){
   LPC_IOCON->PIO[HALL_B_1_PORT][HALL_B_1_PIN] &= ~(3<<3);
   LPC_IOCON->PIO[HALL_B_2_PORT][HALL_B_2_PIN] &= ~(3<<3);
   LPC_IOCON->PIO[HALL_B_3_PORT][HALL_B_3_PIN] &= ~(3<<3);
+
+  LPC_IOCON->PIO[WIND_SENSOR_PORT][WIND_SENSOR_PIN] &= ~(3<<3); //disable weather sensor pull_ups
+  LPC_IOCON->PIO[SNOW_SENSOR_PORT][SNOW_SENSOR_PIN] &= ~(3<<3); //disable weather sensor pull_ups
+
+
 #endif
 
   LPC_GPIO_PORT->DIR[CHARGE_PUMP_PORT] |= 1<<CHARGE_PUMP_PIN; //charge pump

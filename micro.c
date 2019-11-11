@@ -88,7 +88,7 @@ void cfg_wind_input(){
 
 int Snow_Input(){
   //if(buyflags & (1<<snow_secondary))return; 
-  return   !(LPC_GPIO_PORT->PIN[1]&(1<<12));
+  return   !(LPC_GPIO_PORT->PIN[SNOW_SENSOR_PORT]&(1<<SNOW_SENSOR_PIN));
 //  return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
 }
 
@@ -960,10 +960,8 @@ int Focusing()
 
 void init_weather_sensor(){
 
-  LPC_INMUX->PINTSEL[1] = 45;
-  LPC_SYSCON->STARTERP0 |= 1<<7;
-  //LPC_PINT->IENR |= 1<<0;
-  LPC_PINT->SIENR |= 1<<1;
+  LPC_INMUX->PINTSEL[1] = WIND_SENSOR_PIN + 32*WIND_SENSOR_PORT;; //pin 0_1 = wind input 
+  LPC_PINT->IENR |= 1<<1;
   NVIC_EnableIRQ(PIN_INT1_IRQn);
 
 }
