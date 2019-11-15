@@ -244,8 +244,8 @@ void bldc_init_motors(int LoadDefaults)
 
       //init PID
       pid_init(&bldc_motors[i].pid, &bldc_motors[i].position, &bldc_motors[i].target);
-      pid_tune(&bldc_motors[i].pid, 0.05, 0 , 0, BLDC_DEAD_BAND);
-      pid_setinteg(&bldc_motors[i].pid, 0.0);
+      pid_tune(&bldc_motors[i].pid, 0.1, 0.00001 , 0, BLDC_DEAD_BAND);
+      //pid_setinteg(&bldc_motors[i].pid, 0.0);
       pid_bumpless(&bldc_motors[i].pid);
     }
   } else {
@@ -298,9 +298,9 @@ void bldc_init_motors(int LoadDefaults)
 
       //pid sanity check
       if(!isnormal(bldc_motors[i].pid.pgain))
-        bldc_motors[i].pid.pgain = 0.3;
+        bldc_motors[i].pid.pgain = 0.1;
       if(!isnormal(bldc_motors[i].pid.igain))
-        bldc_motors[i].pid.igain = 5/1000000;
+        bldc_motors[i].pid.igain = 1/100000;
       if(!isnormal(bldc_motors[i].pid.dgain))
         bldc_motors[i].pid.dgain = 0;
       if(bldc_motors[i].pid.deadband > 100 || bldc_motors[i].pid.deadband == 0)
@@ -524,6 +524,11 @@ void bldc_init(int LoadDefaults){
   LPC_IOCON->PIO[HALL_B_1_PORT][HALL_B_1_PIN] &= ~(3<<3);
   LPC_IOCON->PIO[HALL_B_2_PORT][HALL_B_2_PIN] &= ~(3<<3);
   LPC_IOCON->PIO[HALL_B_3_PORT][HALL_B_3_PIN] &= ~(3<<3);
+
+  LPC_IOCON->PIO[WIND_SENSOR_PORT][WIND_SENSOR_PIN] &= ~(3<<3); //disable weather sensor pull_ups
+  LPC_IOCON->PIO[SNOW_SENSOR_PORT][SNOW_SENSOR_PIN] &= ~(3<<3); //disable weather sensor pull_ups
+
+
 #endif
 
   LPC_GPIO_PORT->DIR[CHARGE_PUMP_PORT] |= 1<<CHARGE_PUMP_PIN; //charge pump
