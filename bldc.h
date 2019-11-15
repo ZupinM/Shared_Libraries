@@ -102,6 +102,9 @@ typedef struct{
 
 #define BLDC_CTRL_STOP         (1<<3)
 
+#define OTHER_MOTOR(M)   ((M)^1)
+#define target_error(M) (abs(bldc_motors[M].target - bldc_motors[M].position))
+
 #define RUNOUT_ACTIVATE 1
 #define RUNOUT_FREEWHEEL 0
 
