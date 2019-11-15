@@ -175,6 +175,6 @@ void bldc_Lock(int state);
 void bldc_SetInvert(unsigned char motor, unsigned int state);
 void bldc_SetInvertHall(unsigned char motor, unsigned int state);
 void bldc_runout(int state);
-
+void bldc_Comutate(unsigned char motor);
 
 #endif

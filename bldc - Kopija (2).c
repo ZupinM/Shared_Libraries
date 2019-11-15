@@ -173,6 +173,7 @@ bldc_motor *bldc_cm = &bldc_motors[0];
 
 void ActivateDrivers(int dir);
 void Flag_check();
+void bldc_Comutate(unsigned char motor);
 
 unsigned char ButtonStates() {
   unsigned char val = 0;
@@ -1472,7 +1473,6 @@ uint32_t max_I_A, max_I_B;
 
 uint32_t countCycle[2] = {0, 0};
 int diffPos[2] = {0, 0};
-//unsigned char activeMotor = 0xFF;//fsta
 // correct motor position if need
 void bldc_checkPosCorrect(char mot) {
   if(abs(bldc_motors[mot].target - bldc_motors[mot].position) > abs(bldc_motors[mot].pid.deadband + bounce_stop)) {
@@ -1489,10 +1489,8 @@ void bldc_checkPosCorrect(char mot) {
     }
     countCycle[mot]++;
   }
-  else {
+  else
     countCycle[mot] = 0;
- //   activeMotor = 0xFF;
-  }
 }
 
 //MOTOR core control function
@@ -1579,14 +1577,6 @@ void bldc_process() {
   // position correction - if need
   bldc_checkPosCorrect(0);
   bldc_checkPosCorrect(1);
-
-//fsta
-//fsta
-/*if(moving_counter_a == 100)
-  bldc_Comutate(0);
-if(moving_counter_b == 100)
-  bldc_Comutate(1);
-*/
 
 //switch motors when current motor is finished
 #if BLDC_MOTOR_COUNT > 1
@@ -1778,13 +1768,9 @@ if(moving_counter_b == 100)
   } 
 }
 
-//fsta
-//unsigned int counter = 0;
-//commutation
-void bldc_Comutate(unsigned char motor){
 
- //   if(activeMotor == 0xFF)
-   //   activeMotor = motor;
+//commutation 
+void bldc_Comutate(unsigned char motor){
 
     bldc_cm = &bldc_motors[motor];
     bldc_cm->status  &=  ~BLDC_STATUS_STALL;
@@ -1838,15 +1824,6 @@ void bldc_Comutate(unsigned char motor){
 
     if(bldc_cm->status & BLDC_STATUS_ACTIVE){
 
-//fsta
-//
-//if(counter%1000==0)
-//debug_printf("A1: %d A2: %d\n", bldc_motors[0].status & BLDC_STATUS_ACTIVE, bldc_motors[1].status & BLDC_STATUS_ACTIVE);
-//counter++;
-//if(motor == 0 && (bldc_motors[1].status & BLDC_STATUS_ACTIVE != BLDC_STATUS_ACTIVE) || motor == 1 && (bldc_motors[0].status & BLDC_STATUS_ACTIVE != BLDC_STATUS_ACTIVE)) {
-//if(motor == 0 && (bldc_motors[1].status & BLDC_STATUS_ACTIVE) == 0 || motor == 1 && (bldc_motors[0].status & BLDC_STATUS_ACTIVE) == 0) {
-//if(activeMotor == motor) {
-
         if(bldc_cm->state & BLDC_MOTOR_STATE_INVERT_DIRECTION){//Inverted operation
 
             if(bldc_cm->status & BLDC_STATUS_CCW)
@@ -1860,8 +1837,6 @@ void bldc_Comutate(unsigned char motor){
             else                                 
               bldc_SetDrivers(bldc_cw_next [state][1], motor); 
         }
-
-//}//fsta
 
         LPC_SCT1->CTRL &= ~(1 << 2); // unhalt speed measurment timer
 

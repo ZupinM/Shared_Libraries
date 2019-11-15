@@ -108,7 +108,6 @@ extern volatile int rxTimeout0;
 extern unsigned int reset_status;
 
 extern uint16_t sigma_just_connected;
-extern unsigned int tracker_status;
 
 unsigned int xbLength;
 char xbData[BUFSIZE];
