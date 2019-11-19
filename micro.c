@@ -148,9 +148,7 @@ void check_time() {
     ////////////////
     sun_AziEle(longitude,  latitude,  &AE_azimuth, &AE_elevation, &hour_angle, &declination);
     flags|=(1<<equationsAE_ok);
-    
-  
-    
+
     latitude_2 = latitude;     
     if (latitude_2 < 0) {      
         latitude_2=-latitude;
@@ -711,34 +709,34 @@ vrne vrednost kota v stopinjah
 ************************************************************/
 double geometry_selection_show (uint32_t axis, uint32_t geometry_mode) {           //prikaz na PCju
 
-    double temp;
+    double temp = 0;
 
     if (axis==1){                   //A os, A parametri
         switch (geometry_mode) {
-        case 1: temp=geometry_1_show(axis, bldc_position(0),A1_A,gear_ratio_A);                   //SM3 - enoosni
+        case 1: temp=geometry_1_show(axis, bldc_motors[0].position,A1_A,gear_ratio_A);                   //SM3 - enoosni
                 break;
-        case 2: temp=geometry_2_show(bldc_position(0),A1_A,A2_A,A3_A,A4_A,B1_A,B2_A,!(int)A6_A,gear_ratio_A);                   //Etop geometrija - enoosni
+        case 2: temp=geometry_2_show(bldc_motors[0].position,A1_A,A2_A,A3_A,A4_A,B1_A,B2_A,!(int)A6_A,gear_ratio_A);                   //Etop geometrija - enoosni
                 break;
-        case 3: temp=geometry_3_show(bldc_position(0),A1_A,A2_A,A3_A,A5_A,B1_A+B2_A,(int)A6_A,gear_ratio_A);                   //SM34 - vertikalna os
+        case 3: temp=geometry_3_show(bldc_motors[0].position,A1_A,A2_A,A3_A,A5_A,B1_A+B2_A,(int)A6_A,gear_ratio_A);                   //SM34 - vertikalna os
                 break;
-        case 11:temp=geometry_11_show(bldc_position(0),A1_A,gear_ratio_A);
+        case 11:temp=geometry_11_show(bldc_motors[0].position,A1_A,gear_ratio_A);
                 break;
-        case 13:temp=geometry_13_show(bldc_position(0),A1_A,A2_A,A3_A,A5_A,B1_A+B2_A,(int)A6_A,gear_ratio_A);
+        case 13:temp=geometry_13_show(bldc_motors[0].position,A1_A,A2_A,A3_A,A5_A,B1_A+B2_A,(int)A6_A,gear_ratio_A);
                 break;
         }
     }
 
     else {                          //B os, B parametri
         switch (geometry_mode) {
-        case 1: temp=geometry_1_show(axis, bldc_position(1),A1_B,gear_ratio_B);                         //SM3 - enoosni
+        case 1: temp=geometry_1_show(axis, bldc_motors[1].position,A1_B,gear_ratio_B);                         //SM3 - enoosni
                 break;
-        case 2: temp=geometry_2_show(bldc_position(1),A1_B,A2_B,A3_B,A4_B,B1_B,B2_B,!(int)A6_B,gear_ratio_B);                   //Etop geometrija - enoosni
+        case 2: temp=geometry_2_show(bldc_motors[1].position,A1_B,A2_B,A3_B,A4_B,B1_B,B2_B,!(int)A6_B,gear_ratio_B);                   //Etop geometrija - enoosni
                 break;
-        case 3: temp=geometry_3_show(bldc_position(1),A1_B,A2_B,A3_B,A5_B,B1_B+B2_B,(int)A6_B,gear_ratio_B);                   //SM34 - vertikalna os
+        case 3: temp=geometry_3_show(bldc_motors[1].position,A1_B,A2_B,A3_B,A5_B,B1_B+B2_B,(int)A6_B,gear_ratio_B);                   //SM34 - vertikalna os
                 break;
-        case 11:temp=geometry_11_show(bldc_position(1),A1_B,gear_ratio_B);
+        case 11:temp=geometry_11_show(bldc_motors[1].position,A1_B,gear_ratio_B);
                 break;
-        case 13:temp=geometry_13_show(bldc_position(1),A1_B,A2_B,A3_B,A5_B,B1_B+B2_B,(int)A6_B,gear_ratio_B);
+        case 13:temp=geometry_13_show(bldc_motors[1].position,A1_B,A2_B,A3_B,A5_B,B1_B+B2_B,(int)A6_B,gear_ratio_B);
                 break;
         }
     }
