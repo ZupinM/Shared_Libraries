@@ -179,6 +179,7 @@ void USB_display(void) {
   }
 
   if (screen_mux_A==2){
+      show_angle_A = geometry_selection_show (1, (unsigned int)geometry_mode_A);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cshow_angle_A,show_angle_A);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4f",cposition_A, bldc_position(0));
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4f",cdestination_A, bldc_target(0));
@@ -188,7 +189,8 @@ void USB_display(void) {
   }
 
   if (screen_mux_A==3) {
-#ifndef DISABLE_MOTOR_B          
+#ifndef DISABLE_MOTOR_B
+          show_angle_B = geometry_selection_show (2, (unsigned int)geometry_mode_B);
           buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.1f",cshow_angle_B,show_angle_B);
           buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4f",cposition_B, bldc_position(1));
           buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.4f",cdestination_B, bldc_target(1));

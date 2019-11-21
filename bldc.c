@@ -159,13 +159,13 @@ float MOTOR_CUTOF_LEVEL;
 
 extern float mzp_current;   
 
-
-
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
 bldc_motor *bldc_cm = &bldc_motors[0];
 
-
+//fsta
+extern double show_angle_A;
+extern double show_angle_B;
 
 #define ADC_CONVERT_TICS 120
 
@@ -1086,7 +1086,7 @@ float bldc_position(unsigned char motor) {
   if(motor>BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
- 
+
   return (float)mptr->position / (float)mptr->gear_ratio;
 }
 
@@ -1576,7 +1576,7 @@ void bldc_process() {
     return;
   }
 
-    if(bldc_HomeSwitchActive(bldc_cm->index,1) && bldc_cm->ctrl == BLDC_CTRL_TRACKING && bldc_cm->position > bldc_position_to_pulses(bldc_cm->index, bldc_cm->end_switchDetect - 0.1)){
+  if(bldc_HomeSwitchActive(bldc_cm->index,1) && bldc_cm->ctrl == BLDC_CTRL_TRACKING && bldc_cm->position > bldc_position_to_pulses(bldc_cm->index, bldc_cm->end_switchDetect - 0.1)){
     SetEventParameters(bldc_cm->index);
     ActivateDrivers(0);
     bldc_cm->status|= BLDC_STATUS_ENDSWITCH_ERROR;
