@@ -253,6 +253,13 @@ uint8_t LoRa_SPIRead(uint8_t addr, uint8_t *pcBuffer, uint8_t cNbBytes) {
   __enable_irq();
 }
 
+void LoRa_Interrupt(uint8_t enable_disable){
+  if(enable_disable)
+    NVIC_EnableIRQ(PIN_INT0_IRQn);
+  else
+    NVIC_DisableIRQ(PIN_INT0_IRQn);
+}
+
 void LoRa_standby(void) {
   uint8_t tmp = 0x89;
   LoRa_SPIWrite(LR_RegOpMode, & tmp, 1);
@@ -286,10 +293,6 @@ void LoRa_reset(void) {
   for (int i = 0; i < 48000; i++);
   LPC_GPIO_PORT->B[LORA_RESET_PORT][LORA_RESET_PIN] = 1;
   for (int i = 0; i < 48000; i++);
-}
-
-uint8_t LoRa_GetDIO0(void) {
-  return (LPC_GPIO_PORT->B[LORA_DIO0_PORT][LORA_DIO0_PIN]);
 }
 
 void spi_rx_fifo_clear(void) {
@@ -334,6 +337,16 @@ void LoRa_SPI_init(void) { //LPC1549
 
   LPC_GPIO_PORT->DIR[LORA_RESET_PORT] |= (1 << LORA_RESET_PIN);
   LPC_GPIO_PORT->B[LORA_RESET_PORT][LORA_RESET_PIN] |= 1; //Reset pin init
+
+
+  // PINT IRQ
+
+  LPC_INMUX->PINTSEL[0] = LORA_DIO0; //pin external interrupt
+
+  LPC_SYSCON->SYSAHBCLKCTRL0 |= (1 << 11) | (1 << 18); // enable clock to INMUX and PINT
+
+  LPC_PINT->IENR |= 1<<0; //Enable rising edge interrupt
+
 
   set_LED(BLUE, 0, 0);
 
@@ -475,14 +488,6 @@ uint8_t LoRa_config(uint8_t channel, uint8_t power, uint8_t spFactor, uint8_t Lo
   LoRa_SPIWrite(LR_RegMaxPayloadLength, tmp, 1);
 
   LoRa_standby(); //Entry standby mode
-
-  // PINT IRQ
-
-  LPC_INMUX->PINTSEL[0] = LORA_DIO0; //pin external interrupt
-
-  LPC_SYSCON->SYSAHBCLKCTRL0 |= (1 << 11) | (1 << 18); // enable clock to INMUX and PINT
-
-  LPC_PINT->IENR |= 1<<0; //Enable rising edge interrupt
 
   NVIC_EnableIRQ(PIN_INT0_IRQn);
 

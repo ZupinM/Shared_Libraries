@@ -33,6 +33,9 @@
 #define TRANSMISSION_FINISHED 1
 #define PACKET_RECEIVED 2
 
+#define ENABLE_INTERRUPTS 1
+#define DISABLE_INTERRUPTS 0
+
 extern uint8_t LoRa_bindMode_master;
 extern uint8_t conv_mode;
 extern uint8_t LoRa_route[165][MAX_ROUTE_HOPS];
@@ -314,6 +317,7 @@ extern LoRa_t original;
 
 void LoRa_SPIWrite(uint8_t addr, uint8_t* pcBuffer, uint8_t cNbBytes);
 uint8_t LoRa_SPIRead(uint8_t addr, uint8_t* pcBuffer, uint8_t cNbBytes);
+void LoRa_Interrupt(uint8_t enable_disable);
 void LoRa_CS_set(uint8_t state);
 void LoRa_standby(void);
 void LoRa_sleep(void);
@@ -322,8 +326,7 @@ void LoRa_clearIrq(void);
 void LoRa_reset(void);
 uint8_t LoRa_config(uint8_t channel, uint8_t power, uint8_t LoRa_Rate, uint8_t LoRa_BW, uint8_t packetLength, uint8_t mode);
 int LoRa_EntryRx(uint8_t length, uint32_t timeout);
-int LoRa_EntryTx(uint8_t length, uint32_t timeout);	
-uint8_t LoRa_GetDIO0(void);	
+int LoRa_EntryTx(uint8_t length, uint32_t timeout);		
 uint8_t LoRa_tx_finished(void);
 uint8_t LoRa_rx_finished(void);
 void spi_rx_fifo_clear(void);
