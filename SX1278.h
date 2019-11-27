@@ -11,7 +11,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "main.h"
+#include "../main.h"
 #include "uart.h"
 
 #define LoRa_MAX_PACKET	255
@@ -48,7 +48,6 @@ extern uint8_t LoRa_bindMode_slave;
 extern uint8_t LoRa_channel_received;
 extern uint8_t checkRouting;
 extern uint8_t set_settings_flag;
-
 extern uint8_t LoRa_route[165][MAX_ROUTE_HOPS];
 
 #define LoRa_IRQ_PayloadCrcError	( 1 << 5 )

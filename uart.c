@@ -8,10 +8,11 @@
  *   2009.12.07  ver 1.00    Preliminary version, first Release
  *
 ******************************************************************************/
-#include "main.h"
+#include "../main.h"
 #include "LPC15xx.h"
 #include "uart.h"
 #include "../gpio.h"
+#include "uart_15xx.h"
 
 
 // CodeRed - change for CMSIS 1.3
