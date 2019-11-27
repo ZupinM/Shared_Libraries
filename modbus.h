@@ -150,6 +150,11 @@
 
 #define MCMD_W_SERIAL_slave_addr	0x79
 
+#define MCMD_R_Batt_voltage       0x7E
+#define MCMD_R_MSpeed             0x7F		
+#define MCMD_R_NPoles             0x94		
+#define MCMD_W_NPoles             0x95
+
 #define MCMD_W_Detection_I_A			0x80
 #define MCMD_R_Detection_I_A			0x81
 #define MCMD_W_Detection_I_B			0x82
@@ -200,6 +205,7 @@ void modbus_cmd1(void);
 void modbus_cmd1_master(void);
 void modbus_cmd2(void);
 void modbus_cmd2_master(void);
+void modbus_cmd3(void);
 //void modbus_cmd_data2(void);
 unsigned int modbus_crc(uint8_t *UARTBuff, int length, unsigned int crc_calc);
 void ack_reply(void);
@@ -211,7 +217,7 @@ void err_reply(void);
 
 void mcmd_read_byte(int data);
 unsigned int mcmd_write_byte(unsigned int dn_limit,unsigned int up_limit);
-void mcmd_read_int(unsigned int num_int);
+void mcmd_read_int(unsigned int num_int, uint8_t addr);
 unsigned int mcmd_write_int(unsigned int dn_limit,unsigned int up_limit);
 float mcmd_write_float(float dn_limit,float up_limit);
 unsigned int FloatToUIntBytes(float val);
@@ -225,5 +231,7 @@ unsigned int mcmd_read_float(float param, char *pchData);
 uint8_t check_slaves(long long int slaves, volatile int timeout);
 void get_route_order();
 uint8_t check_coexistance(int i, int n);
+void append_crc(void);
+void xbee_conCheck(void);
 #endif
 

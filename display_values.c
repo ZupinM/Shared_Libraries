@@ -20,7 +20,7 @@
 #include "sun.h"
 
 #include "bldc.h"
-#include "main.h"
+#include "../main.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -141,7 +141,6 @@ extern unsigned char ES_0_normallyOpenHi;
 extern unsigned char ES_1_normallyOpenLo;
 extern unsigned char ES_1_normallyOpenHi;
 
-extern volatile unsigned int bldc_Speed;
 extern volatile unsigned int number_of_poles;
 
 extern unsigned int SN[4];

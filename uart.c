@@ -12,7 +12,7 @@
 #include "LPC15xx.h"
 #include "uart.h"
 #include "../gpio.h"
-#include "uart_15xx.h"
+//#include "uart_15xx.h"
 
 
 // CodeRed - change for CMSIS 1.3
@@ -32,7 +32,7 @@ volatile uint32_t UARTCount0 = 0;
 volatile uint32_t UARTtxCount0;
 volatile uint32_t UARTtxCount1;
 volatile uint32_t UARTtxCount2;
-volatile uint8_t *BufferTXPtr0;  
+         uint8_t *BufferTXPtr0;  
 volatile uint8_t *BufferTXPtr1;  
 volatile uint8_t *BufferTXPtr2;  
 volatile uint32_t UARTCount1 = 0;
@@ -107,7 +107,7 @@ void UART0_IRQHandler(void)
 /*****************************************************************************/
 
 void rs485_RTS_timeout(void){
-  if(LPC_GPIO_PORT->SET[RS485_RTS_PORT] | (1 << RS485_RTS_PIN)){  //  RTS - prevent hang-up
+  if(LPC_GPIO_PORT->PIN[RS485_RTS_PORT] & (1 << RS485_RTS_PIN)){  //  RTS - prevent hang-up
       flow_ctrl_hangup_timer++;
       if(flow_ctrl_hangup_timer > 1000){
         flow_ctrl_hangup_timer = 0;

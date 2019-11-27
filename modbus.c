@@ -10,7 +10,6 @@
 
 #include "LPC15xx.h"
 #include "modbus.h"
-#include "uart.h"
 #include "config.h"
 #include "../gpio.h"
 #include <string.h>
@@ -24,15 +23,19 @@
 
 unsigned int crc_calc1;
 unsigned int crc_calc2;
+unsigned int crc_calc;
 unsigned int number_TX_bytes;
 unsigned char m_ack_state;                              // vsebuje opis napake, za katero MODBUS ukaz NI bil izvrsen
 unsigned int read_int_buf[30];
 unsigned char broadcastID;                              // 1 = broadcast call, 0 = normal call by ID
+extern unsigned int modbus_indicator;			//stevec dolzine utripa ob rs485 sprejetju stringa 
 
 unsigned char enabled = 0;
 unsigned char missed_enable = 0;
 unsigned char enable_tracking_retry = 0;
 extern unsigned char enabled_in_micro;
+extern uint16_t sigma_just_connected;
+extern float           LineResistance;
 
 extern uint8_t usb_drive;
 extern float bldc_Current;
@@ -72,6 +75,7 @@ extern unsigned int SN[4];        // vsebujejo serijske stevilke
 
 extern unsigned int modbus_cnt1;        // steje cas zadnjega modbus ukaza
 extern unsigned int modbus_cnt2;        // steje cas zadnjega modbus ukaza
+extern unsigned int modbus_cnt;
 extern unsigned int modbus_timeout;     // timeout, ko ni MODBUS komunikacije [sekunde]
 extern unsigned int modbus_timeout_delay;
 extern unsigned int crc_errors;
@@ -138,7 +142,7 @@ void modbus_cmd () {
         return;
       }
 
-      dataLength = xbReceivePacketRestore((char *)UARTBuffer1, UARTCount1);
+      dataLength = xbReceivePacketRestore((char *)UARTBuffer1);
       if (dataLength == -1) {
         UARTCount1 = 0;
         return;
@@ -202,7 +206,7 @@ void modbus_cmd () {
             UARTBuffer[1] == INTCOM_LORA_SET_SETTINGS ||
             UARTBuffer[1] == INTCOM_LORA_GET_RSSI ||
               (UARTBuffer[0] == 0xFF &&                          // broadcast(0xFF) for SN getting
-              UARTBuffer[1] == INTCOM_LORA_GET_SN_BY_ID)) &&
+              UARTBuffer[1] == INTCOM_CONV_GET_SN_BY_ID)) &&
           transceiver == LORA) ||                               // << LoRa condition
         ((UARTBuffer[1] == CMD_RUN_GET_LOADER_VER ||
         UARTBuffer[1] == CMD_RUN_GET_VERSION ||
@@ -240,7 +244,7 @@ void modbus_cmd () {
       }
       case CMD_RUN_GET_VOLTAGE: {
         float voltage = bldc_U(SUPPLY);
-        number_TX_bytes = mcmd_read_float_conv(voltage, (char*)UARTBuffer);
+        number_TX_bytes = mcmd_read_float(voltage, (char*)UARTBuffer);
         append_crc();
         goto TX;
         break;
@@ -346,7 +350,7 @@ void modbus_cmd () {
           break;
         }
 
-        case INTCOM_LORA_GET_SN_BY_ID: {
+        case INTCOM_CONV_GET_SN_BY_ID: {
             read_int_buf[0] = SN[0];
             read_int_buf[1] = SN[1];
             read_int_buf[2] = SN[2];
@@ -438,12 +442,12 @@ void modbus_cmd () {
 
         // USUPPLY
         case MCMD_R_Usupply: {				   
-          mcmd_read_float(bldc_U(SUPPLY));
+          mcmd_read_float(bldc_U(SUPPLY), (char *)UARTBuffer);
           break;
         }
         // IMOTOR
         case MCMD_R_Imotor: {					   
-          mcmd_read_float(bldc_Current);
+          mcmd_read_float(bldc_Current, (char *)UARTBuffer);
           break;
         }
 
@@ -481,7 +485,7 @@ void modbus_cmd () {
           float temp;
           temp = (float)swVersion.sw_version;
           temp /= 1000.0;				// verzija je napisana v int 			   			
-          mcmd_read_float(temp);
+          mcmd_read_float(temp, (char *)UARTBuffer);
           break;
         } 
         case MCMD_R_boot_ver: {
@@ -494,12 +498,12 @@ void modbus_cmd () {
         }
         // REMAIN IMPULSES A
         case MCMD_R_remain_A: {                         // ostanek impulzov do 0000 od zadnjega REF			 							
-          mcmd_read_float(bldc_remaining(0));
+          mcmd_read_float(bldc_remaining(0), (char *)UARTBuffer);
           break;
         }
         // REMAIN IMPULSES B
         case MCMD_R_remain_B: {                         // ostanek impulzov do 0000 od zadnjega REF			 							
-          mcmd_read_float(bldc_remaining(1));
+          mcmd_read_float(bldc_remaining(1), (char *)UARTBuffer);
           break;
         }
         case MCMD_R_events: {
@@ -550,12 +554,12 @@ void modbus_cmd () {
         }
         // R POSITION A
         case MCMD_R_position_A: {					
-          mcmd_read_float(bldc_position(0));
+          mcmd_read_float(bldc_position(0), (char *)UARTBuffer);
           break;
         }
         // R DESTINATION A
         case MCMD_R_destination_A: {														
-          mcmd_read_float(bldc_target(0));
+          mcmd_read_float(bldc_target(0), (char *)UARTBuffer);
           break;
         }
         // W DESTINATION A
@@ -627,12 +631,12 @@ void modbus_cmd () {
 
         // R POSITION B
         case MCMD_R_position_B: {					
-          mcmd_read_float(bldc_position(1));
+          mcmd_read_float(bldc_position(1), (char *)UARTBuffer);
           break;
         }
         // R DESTINATION B
         case MCMD_R_destination_B: {														
-          mcmd_read_float(bldc_target(1));
+          mcmd_read_float(bldc_target(1), (char *)UARTBuffer);
           break;
         }
         // W DESTINATION B
@@ -811,17 +815,17 @@ void modbus_cmd () {
         }
 
         case MCMD_R_Batt_voltage: {
-          mcmd_read_float(get_batt_U());
+          mcmd_read_float(get_batt_U(), (char *)UARTBuffer);
           break;				
         }
 
         // U hall
         case MCMD_R_Uhall_0:	{				   
-          mcmd_read_float(bldc_U(HALL0));
+          mcmd_read_float(bldc_U(HALL0), (char *)UARTBuffer);
           break;
         }
         case MCMD_R_Uhall_1:	{				   
-          mcmd_read_float(bldc_U(HALL1));
+          mcmd_read_float(bldc_U(HALL1), (char *)UARTBuffer);
           break;
         }
 
@@ -878,7 +882,7 @@ void modbus_cmd () {
   
         case MCMD_R_EndSwithDetectA: {
           Ftemp = bldc_Motor(0)->end_switchDetect;								
-          mcmd_read_float(Ftemp);
+          mcmd_read_float(Ftemp, (char *)UARTBuffer);
           break;
         }
 
@@ -893,7 +897,7 @@ void modbus_cmd () {
 
         // MIN RANGE A
         case MCMD_R_min_range_A: {
-          mcmd_read_float(bldc_Motor(0)->min_position);
+          mcmd_read_float(bldc_Motor(0)->min_position, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_min_range_A: {
@@ -909,7 +913,7 @@ void modbus_cmd () {
 
         // MAX RANGE A
         case MCMD_R_max_range_A: {
-          mcmd_read_float(bldc_Motor(0)->max_position);
+          mcmd_read_float(bldc_Motor(0)->max_position, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_max_range_A: { 
@@ -923,7 +927,7 @@ void modbus_cmd () {
         }
         
         case  MCMD_R_ZeroOffsetA: {
-          mcmd_read_float(bldc_Motor(0)->home_offset);
+          mcmd_read_float(bldc_Motor(0)->home_offset, (char *)UARTBuffer);
           break;
         }
         
@@ -939,7 +943,7 @@ void modbus_cmd () {
 				
         // MAX I MOTOR A
         case MCMD_R_max_Imotor_A: {					
-          mcmd_read_float(bldc_Motor(0)->I_limit);
+          mcmd_read_float(bldc_Motor(0)->I_limit, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_max_Imotor_A: {
@@ -954,7 +958,7 @@ void modbus_cmd () {
         
         case MCMD_R_EndSwithDetectB: {
           Ftemp = bldc_Motor(1)->end_switchDetect;								
-          mcmd_read_float(Ftemp);
+          mcmd_read_float(Ftemp, (char *)UARTBuffer);
           break;
         }
 
@@ -969,7 +973,7 @@ void modbus_cmd () {
 
         //MIN RANGE	B
         case MCMD_R_min_range_B: {
-          mcmd_read_float(bldc_Motor(1)->min_position);
+          mcmd_read_float(bldc_Motor(1)->min_position, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_min_range_B: {
@@ -985,7 +989,7 @@ void modbus_cmd () {
 
         //MAX RANGE	B
         case MCMD_R_max_range_B: {
-          mcmd_read_float(bldc_Motor(1)->max_position);
+          mcmd_read_float(bldc_Motor(1)->max_position, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_max_range_B: { 
@@ -999,7 +1003,7 @@ void modbus_cmd () {
         }
         
         case  MCMD_R_ZeroOffsetB: {
-          mcmd_read_float(bldc_Motor(1)->home_offset);
+          mcmd_read_float(bldc_Motor(1)->home_offset, (char *)UARTBuffer);
           break;
         }
         
@@ -1015,7 +1019,7 @@ void modbus_cmd () {
         
         //MAX I MOTOR B
         case MCMD_R_max_Imotor_B: {					
-          mcmd_read_float(bldc_Motor(1)->I_limit);
+          mcmd_read_float(bldc_Motor(1)->I_limit, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_max_Imotor_B: {
@@ -1030,7 +1034,7 @@ void modbus_cmd () {
 
         //U SUPPLY FACTOR
         case MCMD_R_Usupply_factor: {
-          mcmd_read_float(bldc_config()->UConvertRatio);
+          mcmd_read_float(bldc_config()->UConvertRatio, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_Usupply_factor: {
@@ -1044,7 +1048,7 @@ void modbus_cmd () {
         }
         // I MOTOR FACTOR
         case MCMD_R_Imotor_factor: {
-          mcmd_read_float(bldc_config()->IConvertRatio);
+          mcmd_read_float(bldc_config()->IConvertRatio, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_Imotor_factor: {
@@ -1058,7 +1062,7 @@ void modbus_cmd () {
         }
         //REST POSITION	A
         case MCMD_R_modbus_timeout_position_A: {			
-          mcmd_read_float(bldc_Motor(0)->modbus_timeout_position);
+          mcmd_read_float(bldc_Motor(0)->modbus_timeout_position, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_modbus_timeout_position_A: {
@@ -1072,7 +1076,7 @@ void modbus_cmd () {
         }	
         // REST POSITION B
         case MCMD_R_modbus_timeout_position_B: {			
-          mcmd_read_float(bldc_Motor(1)->modbus_timeout_position);
+          mcmd_read_float(bldc_Motor(1)->modbus_timeout_position, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_modbus_timeout_position_B: {
@@ -1136,7 +1140,7 @@ void modbus_cmd () {
         }
         //GEAR RATIO A
         case MCMD_R_gear_ratio_A: {
-          mcmd_read_float(bldc_Motor(0)->gear_ratio);
+          mcmd_read_float(bldc_Motor(0)->gear_ratio, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_gear_ratio_A: {
@@ -1170,12 +1174,12 @@ void modbus_cmd () {
         }
 		
         case MCMD_R_StartI_ratioA: {
-          mcmd_read_float(bldc_Motor(0)->I_Inrush_ratio);
+          mcmd_read_float(bldc_Motor(0)->I_Inrush_ratio, (char *)UARTBuffer);
           break;
         }
 
         case MCMD_R_StartI_timeA: {
-          mcmd_read_float(bldc_Motor(0)->I_Inrush_time);
+          mcmd_read_float(bldc_Motor(0)->I_Inrush_time, (char *)UARTBuffer);
           break;
         }
 
@@ -1190,13 +1194,13 @@ void modbus_cmd () {
         }
         
         case MCMD_R_Detection_I_A: {
-          mcmd_read_float(bldc_Motor(0)->Idetection);
+          mcmd_read_float(bldc_Motor(0)->Idetection, (char *)UARTBuffer);
           break;				
         }
 
         // GEAR RATIO B
         case MCMD_R_gear_ratio_B: {
-          mcmd_read_float(bldc_Motor(1)->gear_ratio);
+          mcmd_read_float(bldc_Motor(1)->gear_ratio, (char *)UARTBuffer);
           break;
         }
         case MCMD_W_gear_ratio_B: {
@@ -1230,12 +1234,12 @@ void modbus_cmd () {
         }
 
         case MCMD_R_StartI_ratioB: {
-          mcmd_read_float(bldc_Motor(1)->I_Inrush_ratio);
+          mcmd_read_float(bldc_Motor(1)->I_Inrush_ratio, (char *)UARTBuffer);
           break;
         }
 
         case MCMD_R_StartI_timeB: {
-          mcmd_read_float(bldc_Motor(1)->I_Inrush_time);
+          mcmd_read_float(bldc_Motor(1)->I_Inrush_time, (char *)UARTBuffer);
           break;
         }
 
@@ -1250,7 +1254,7 @@ void modbus_cmd () {
         }
         
         case MCMD_R_Detection_I_B: {
-          mcmd_read_float(bldc_Motor(1)->Idetection);
+          mcmd_read_float(bldc_Motor(1)->Idetection, (char *)UARTBuffer);
           break;				
         }
 
@@ -1322,7 +1326,7 @@ void modbus_cmd () {
         }	
         
         case MCMD_R_Line_Resistance: {
-          mcmd_read_float(LineResistance);
+          mcmd_read_float(LineResistance, (char *)UARTBuffer);
           break;	
         }
  
@@ -1333,7 +1337,7 @@ void modbus_cmd () {
         }
         
         case MCMD_R_MaxLine_Resistance: {
-          mcmd_read_float(max_line_resistance);
+          mcmd_read_float(max_line_resistance, (char *)UARTBuffer);
           break;	
         }
 
@@ -2397,6 +2401,18 @@ void modbus_cmd2() {
   }
 }
 
+/***********************************************************
+  RX from RS485 (positioner) forwarding to XBEE (Sigma)
+************************************************************/
+void modbus_cmd3() {
+  memcpy((char *)UARTBuffer1, (char *)UARTBuffer0, BUFSIZE);
+  xbLength = xbSendPacketPrepare((char *)UARTBuffer1, UARTCount0);
+
+  UART1Send( (uint8_t *)(&xbData[0]), xbLength);
+  UARTCount0 = 0;
+
+}
+
 const char cmd2[] = {CMD_GET_STATUS, MCMD_R_All_PARAM, MCMD_R_boot_ver, MCMD_R_status, MCMD_R_events, MCMD_R_serial_numbers, MCMD_R_version};
 char cmdIdx = 0;
 
@@ -2455,6 +2471,17 @@ unsigned int modbus_crc(uint8_t *UARTBuff, int length, unsigned int crc_calc) {
   return crc_calc;
 }
 
+unsigned int mcmd_write_int1() {
+  unsigned int temp; 
+
+  temp = UARTBuffer[5];
+  temp += UARTBuffer[4] * 0x100;
+  temp += UARTBuffer[3] * 0x10000;
+  temp += UARTBuffer[2] * 0x1000000;
+
+  return temp;
+}
+
 unsigned int mcmd_read_float(float param, char *pchData) {      //float
   float abc [1];                //kazalec deluje samo na array - ne vem zakaj???
   unsigned int *p = (unsigned int *)abc;                   
@@ -2468,6 +2495,164 @@ unsigned int mcmd_read_float(float param, char *pchData) {      //float
   pchData[4] = (temp / 0x100) & 0xFF;
   pchData[5] = (temp) & 0xFF;
   return 6;
+}
+
+void mcmd_read_int(unsigned int num_int, uint8_t addr) { 		//vec int stevil "num_int" * 0x00000000
+  unsigned int i = 0, j = 2;
+
+  UARTBuffer[0] = addr; 
+  UARTBuffer[1] &= ~(1<<7);
+
+  do {
+    UARTBuffer[j++] = read_int_buf[i] / 0x1000000;
+    UARTBuffer[j++] = (read_int_buf[i] / 0x10000) & 0xFF;
+    UARTBuffer[j++] = (read_int_buf[i] / 0x100) & 0xFF;
+    UARTBuffer[j++] = (read_int_buf[i]) & 0xFF;
+    num_int--;
+    i++;
+  } while (num_int != 0);
+
+  crc_calc = modbus_crc((uint8_t *)UARTBuffer, j, CRC_NORMAL);
+  UARTBuffer[j++] = crc_calc & 0xFF;
+  UARTBuffer[j++] = crc_calc / 0x100;
+  number_TX_bytes = j;
+}
+
+
+
+unsigned int mcmd_write_int(unsigned int dn_limit,unsigned int up_limit) {	  //eno int stevilo 0x00000000
+  unsigned int temp; 
+
+  temp = UARTBuffer[5];
+  temp += UARTBuffer[4] * 0x100;
+  temp += UARTBuffer[3] * 0x10000;
+  temp += UARTBuffer[2] * 0x1000000;
+
+  if ((temp <= up_limit) && (temp >= dn_limit)) 
+    ack_valUI_reply(temp);
+  else {
+    m_ack_state = MACK_VALUE_OUT_OF_LIMIT;
+    err_reply();
+  }
+  return temp;
+}
+void ack_reply() {
+
+  UARTBuffer[0] = slave_addr; 
+  UARTBuffer[1] &=~ (1 << 7);
+  UARTBuffer[2] = MACK_OK;
+  crc_calc = modbus_crc((uint8_t *)UARTBuffer, 3, CRC_NORMAL);
+  UARTBuffer[3] = crc_calc & 0xFF;
+  UARTBuffer[4] = crc_calc / 0x100;
+  number_TX_bytes = 5;
+}
+float mcmd_write_float1(){ 		//float
+  float abc [1];				   							//kazalec deluje samo na array - ne vem zakaj???
+  unsigned int *p = (unsigned int *)abc;                   
+  unsigned int temp;
+
+  temp = UARTBuffer[5];
+  temp += UARTBuffer[4] * 0x100;
+  temp += UARTBuffer[3] * 0x10000;
+  temp += UARTBuffer[2] * 0x1000000;
+  *p=temp;	
+
+  return abc[0];
+}
+
+
+float mcmd_write_float(float dn_limit,float up_limit){ 		//float
+  float abc[1];				   							//kazalec deluje samo na array - ne vem zakaj???
+  unsigned int *p = (unsigned int *)abc;                   
+  unsigned int temp;
+
+  temp = UARTBuffer[5];
+  temp += UARTBuffer[4] * 0x100;
+  temp += UARTBuffer[3] * 0x10000;
+  temp += UARTBuffer[2] * 0x1000000;
+  *p = temp;	
+
+  if ((abc[0] <= up_limit) && (abc[0] >= dn_limit)) 
+    ack_val_reply(abc[0]);	  	//omejitev vpisa med 0 in 1000 v izogib trapastim vrednostim
+  else {
+    m_ack_state = MACK_VALUE_OUT_OF_LIMIT;
+    err_reply();
+  }
+  return abc[0];
+}
+
+float mcmd_write_limit_float(float dn_limit,float up_limit,float offset){ 		//float
+  float val ;				   							//kazalec deluje samo na array - ne vem zakaj???
+  unsigned int *p = (unsigned int *)&val;                   
+  unsigned int temp;
+
+  temp = UARTBuffer[5];
+  temp += UARTBuffer[4] * 0x100;
+  temp += UARTBuffer[3] * 0x10000;
+  temp += UARTBuffer[2] * 0x1000000;
+  *p = temp;	
+
+  val += offset;
+
+  if(val > up_limit)
+    val = up_limit;
+  if(val < dn_limit)
+    val = dn_limit;
+
+  ack_val_reply(val);	  	//omejitev vpisa med 0 in 1000 v izogib trapastim vrednostim
+
+  return val;
+}
+
+void ack_val_reply(float fVal) {
+  float abc [1];				   			//kazalec deluje samo na array - ne vem zakaj???
+  unsigned int *p = (unsigned int *)abc;                   
+  unsigned int temp;
+  abc[0]=fVal;
+  temp=*p;
+
+  UARTBuffer[0] = slave_addr; 
+  UARTBuffer[1] &=~ (1<<7);
+  UARTBuffer[2] = MACK_OK;
+
+  UARTBuffer[3] = temp / 0x1000000;
+  UARTBuffer[4] = (temp / 0x10000) & 0xFF;
+  UARTBuffer[5] = (temp / 0x100) & 0xFF;
+  UARTBuffer[6] = (temp) & 0xFF;
+
+  crc_calc = modbus_crc((uint8_t*) UARTBuffer, 7, CRC_NORMAL);
+  UARTBuffer[7] = crc_calc & 0xFF;
+  UARTBuffer[8] = crc_calc / 0x100;
+  number_TX_bytes = 9;
+}
+
+void ack_valUI_reply(unsigned int num_int) {
+  unsigned int i = 0, j = 3;
+
+  UARTBuffer[0] = slave_addr; 
+  UARTBuffer[1] &=~ (1<<7);
+  UARTBuffer[2] = MACK_OK;
+
+  UARTBuffer[3] = num_int / 0x1000000;
+  UARTBuffer[4] = (num_int / 0x10000) & 0xFF;
+  UARTBuffer[5] = (num_int / 0x100) & 0xFF;
+  UARTBuffer[6] = (num_int) & 0xFF;
+
+  crc_calc = modbus_crc((uint8_t*) UARTBuffer, 7, CRC_NORMAL);
+  UARTBuffer[7] = crc_calc & 0xFF;
+  UARTBuffer[8] = crc_calc / 0x100;
+  number_TX_bytes = 9;
+}
+
+void err_reply() {
+
+  UARTBuffer[0] = slave_addr; 
+  UARTBuffer[1] |=(1<<7);
+  UARTBuffer[2] = m_ack_state;
+  crc_calc = modbus_crc((uint8_t*)UARTBuffer, 3, CRC_NORMAL);
+  UARTBuffer[3] = crc_calc&0xFF;
+  UARTBuffer[4] = crc_calc/0x100;
+  number_TX_bytes=5;
 }
 
 // prepare packet for sending via xBee    
@@ -2553,6 +2738,7 @@ unsigned int xbReceivePacketRestore(char *pchBuffer)
   return (xbLength - 16);                       //payload length  
 }
 
+
 unsigned short getVersionB() {
 
   unsigned short ver;
@@ -2578,13 +2764,17 @@ void modbus_timeout_handling(unsigned int *modbus_cnt) {
       mtimeout = 0xffffffff;                    //limit value
   
     if (modbus_timeout) {                       //timeout enabled   
-      *modbus_cnt++;
-      flags &= ~Modbus_timeout;
-    } else {
+      if (*modbus_cnt >= mtimeout) {   //sekunde
+        flags |= Modbus_timeout;
+      }else{
+        *modbus_cnt++;
+        flags &= ~Modbus_timeout;
+      }
+    }else{
       *modbus_cnt = 0;
       flags &= ~Modbus_timeout;
     }
-  } else
+  }else
     flags &= ~Modbus_timeout;
 }
 /////////////////////////////////////////////////////////////
@@ -2655,4 +2845,26 @@ uint8_t check_coexistance(int i, int n){
     i=MAX_SLAVE_ADDR;   
   }   
   return 1;   
+}
+
+void append_crc(void){
+    crc_calc2 = modbus_crc((uint8_t *)UARTBuffer, number_TX_bytes, CRC_NORMAL);
+    UARTBuffer[number_TX_bytes++] = crc_calc2 & 0xFF;
+    UARTBuffer[number_TX_bytes++] = crc_calc2 / 0x100;
+}
+
+void xbee_conCheck() {
+
+  NVIC_DisableIRQ(UART1_IRQn);
+  UART1Init(115200);
+
+  xbData[0] = 0X7E;
+  xbData[1] = 0X0;
+  xbData[2] = 0X04;
+  xbData[3] = 0X08; // AT
+  xbData[4] = 0X01;
+  xbData[5] = 0X49; // ID
+  xbData[6] = 0X44;
+  xbData[7] = 0X69;
+  UART1Send((uint8_t *)(&xbData[0]), 8);
 }

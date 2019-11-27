@@ -63,8 +63,8 @@ const unsigned char bldc_ccw_next[7][3]={
 #include "bldc.h"
 #include "lpc15xx.h"
 #include "pid.h"
-#include "main.h"
-#include "eeprom.h"
+#include "../main.h"
+#include "../eeprom.h"
 
 #include "focus.h"
 
@@ -115,7 +115,7 @@ float battery_voltage = 3;
 float temperature;
 
 
-uint64_t                        bldc_Speed;     //RPM
+volatile unsigned int           bldc_Speed;     //RPM
 volatile unsigned int           number_of_poles = 2;
 volatile unsigned int           speed_sample_counter;
 volatile unsigned int           bldc_Speed_raw; //ticks from comutation to comutation
@@ -921,6 +921,10 @@ float bldc_U(unsigned char measuring_point) {
     case HALL1 :
       return (float)UVccHALL_1_avg  / bldc_cfg.H1ConvertRatio;
   }
+}
+
+float gpio_U(){
+  return bldc_U(SUPPLY);
 }
 
 float get_batt_U(){
