@@ -38,7 +38,8 @@
 #define LSR_TEMT	0x40
 #define LSR_RXFE	0x80
 
-#define BUFSIZE		1040
+#define BUFSIZE		255
+#define BUFSIZE_LONG	288
 
 
 /* RS485 mode definition. */
@@ -55,11 +56,6 @@
 #define MODBUS_RESTART				(1<<3)
 #define MODBUS_CLEAR_MASK 		(~(MODBUS_PACKET_RECIVED|MODBUS_DISCARD_PACKET|MODBUS_ADDRESS_VALID))
 
-//#define UART_STAT_RXRDY (0x1 << 0)
-//#define UART_STAT_TXRDY (0x1 << 2)
-//#define UART_STAT_RXIDLE (0x1 << 1)
-//#define UART_STAT_TXIDLE (0x1 << 3)
-
 #define UART_MODE_NONE 0
 #define UART_MODE_RS485 (1 << 0)
 #define UART_MODE_XBEE (1 << 1)
@@ -67,10 +63,13 @@
 //void ModemInit( void );
 void UART0Init(uint32_t Baudrate);
 void UART1Init(uint32_t Baudrate);
+void UART2Init(uint32_t Baudrate);
 void UART0_IRQHandler(void);
 void UART1_IRQHandler(void);
+void UART2_IRQHandler(void);
 void UART0Send(uint8_t *BufferPtr, uint32_t Length);
 void UART1Send(uint8_t *BufferPtr, uint32_t Length);
+void UART2Send(uint8_t *BufferPtr, uint32_t Length);
 
 int modbus_discard(void);
 int modbus_newRequest(void);
@@ -86,6 +85,7 @@ void modbus_ReqProcessed2(void);
 
 void UART0ClearStatus(void);
 void UART1ClearStatus(void);
+void UART2ClearStatus(void);
 
 void rs485_RTS_timeout(void);
 #endif /* end __UART_H */

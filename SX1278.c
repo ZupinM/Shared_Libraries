@@ -1,11 +1,10 @@
+#include "LPC15xx.h"
+#include "../main.h"
+#include "../gpio.h"
 #include "SX1278.h"
 #include <string.h>
-#include "../gpio.h"
-#include "main.h"
 #include "modbus.h"
 #include "uart.h"
-
-#include "LPC15xx.h"
 
 LoRa_t OriginalSettings;
 
