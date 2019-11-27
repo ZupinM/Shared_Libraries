@@ -67,10 +67,13 @@
 //void ModemInit( void );
 void UART0Init(uint32_t Baudrate);
 void UART1Init(uint32_t Baudrate);
+void UART2Init(uint32_t Baudrate);
 void UART0_IRQHandler(void);
 void UART1_IRQHandler(void);
+void UART2_IRQHandler(void);
 void UART0Send(uint8_t *BufferPtr, uint32_t Length);
 void UART1Send(uint8_t *BufferPtr, uint32_t Length);
+void UART2Send(uint8_t *BufferPtr, uint32_t Length);
 
 int modbus_discard(void);
 int modbus_newRequest(void);
@@ -86,6 +89,7 @@ void modbus_ReqProcessed2(void);
 
 void UART0ClearStatus(void);
 void UART1ClearStatus(void);
+void UART2ClearStatus(void);
 
 void rs485_RTS_timeout(void);
 #endif /* end __UART_H */

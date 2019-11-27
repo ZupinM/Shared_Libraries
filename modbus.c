@@ -42,7 +42,7 @@ unsigned char enable_tracking_retry = 0;
 extern unsigned char enabled_in_micro;
 
 extern uint8_t usb_drive;
-extern float mzp_current;
+extern float bldc_Current;
 extern uint8_t voltage_select_0;
 extern uint8_t voltage_select_1;
 extern float UVccHALL_0, UVccHALL_1;
@@ -448,7 +448,7 @@ void modbus_cmd () {
         }
         // IMOTOR
         case MCMD_R_Imotor: {					   
-          mcmd_read_float(mzp_current);
+          mcmd_read_float(bldc_Current);
           break;
         }
 
@@ -1276,7 +1276,7 @@ void modbus_cmd () {
           //read_int_buf[6]=0;
 
           read_int_buf[7]=FloatToUIntBytes(bldc_U(SUPPLY));
-          read_int_buf[8]=FloatToUIntBytes(mzp_current);
+          read_int_buf[8]=FloatToUIntBytes(bldc_Current);
 
           read_int_buf[9]=FloatToUIntBytes (bldc_remaining(0));
           read_int_buf[10]=FloatToUIntBytes(bldc_position(0));
