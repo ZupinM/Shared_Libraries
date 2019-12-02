@@ -409,8 +409,6 @@ void UARTSend(uint8_t *BufferPtr, uint32_t Length)
   LPC_USART0->TXDATA = *BufferPtr;
   BufferTXPtr0 = BufferPtr;
   UARTtxCount0 = Length - 1;
-//  if(UARTtxCount0 > 30)
-//     return;
   LPC_USART0->INTENSET |= (1 << 2);   //enable TX ready interrupt
 
   return;

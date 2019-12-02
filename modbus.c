@@ -64,6 +64,7 @@ extern uint8_t  tx_setting_route;
 extern uint8_t tx_settings_flag;
 extern uint16_t online_timeouts[165];
 extern uint8_t tx_settings_buffer[BUFSIZE];
+uint8_t LoRa_Responded = 0;
 
 /* parameters */
 
@@ -199,7 +200,7 @@ void modbus_cmd () {
       }
       else {
 
-
+//////////////////////////////////////////****NANO RESPONSE*****////////////////////////////////////////////////
       switch (UARTBuffer0[1]) {
         // reset 
         case MCD_W_reset: {					 	
@@ -1213,7 +1214,10 @@ void modbus_cmd () {
           break;
         }
       }
-    }
+    }                                         //--^--//
+////////////////////////////////////////****NANO RESPONSE*****////////////////////////////////////////////////
+
+
 
   TX:
       if(eepromUpdate) {
@@ -1236,7 +1240,6 @@ void modbus_cmd () {
             if(UARTBuffer0[1] == MCMD_R_All_PARAM && crc_calc2 == 0){ //Read All Parameters 
               UARTBuffer0[26] = LoRa_id;
               UARTBuffer0[66] = LoRa_get_rssi();
-
               number_TX_bytes0 =- 2; //delete and recalculate crc for LoRa packet
               crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
               UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
@@ -1247,7 +1250,6 @@ void modbus_cmd () {
           }              
           else if (uartMode == UART_MODE_RS485) {
             UARTSend( (uint8_t *)UARTBuffer0, number_TX_bytes0);
-
             UARTCount0 = 0;
           }
       }
@@ -1272,7 +1274,7 @@ void modbus_cmd () {
     UARTSend( (uint8_t *)UARTBuffer0, UARTCount0);
     UARTCount1 = 0;
   }
-
+  LoRa_Responded = 0;
 }
 
 
@@ -2056,7 +2058,7 @@ const char cmd2[] = {CMD_GET_STATUS, MCMD_R_All_PARAM, MCMD_R_boot_ver, MCMD_R_s
 char cmdIdx = 0;
 
 uint8_t LoRa_info_response(uint8_t * UARTBuffer, uint8_t* number_TX_bytes){
-  uint8_t LoRa_Responded = 0;
+  LoRa_Responded = 0;
   if(!
       (
         (
@@ -2309,6 +2311,9 @@ unsigned int mcmd_read_float(float param, char *pchData) {      //float
   abc[0] = param;
   temp = *p;
 
+  if(!LoRa_Responded)
+    UARTBuffer0[1] &= ~(1<<7);
+
   pchData[2] = temp / 0x1000000;
   pchData[3] = (temp / 0x10000) & 0xFF;
   pchData[4] = (temp / 0x100) & 0xFF;
@@ -2320,8 +2325,9 @@ unsigned int mcmd_read_float(float param, char *pchData) {      //float
 unsigned int mcmd_read_int(unsigned int num_int, uint8_t addr) { 		//vec int stevil "num_int" * 0x00000000
   unsigned int i = 0, j = 2;
 
-  UARTBuffer0[0] = addr; 
-  UARTBuffer0[1] &= ~(1<<7);
+  UARTBuffer0[0] = addr;
+  if(!LoRa_Responded)
+    UARTBuffer0[1] &= ~(1<<7);
 
   do {
     UARTBuffer0[j++] = read_int_buf[i] / 0x1000000;
