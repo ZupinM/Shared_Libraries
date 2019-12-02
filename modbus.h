@@ -206,7 +206,7 @@ void modbus_cmd1_master(void);
 void modbus_cmd2(void);
 void modbus_cmd2_master(void);
 void modbus_cmd3(void);
-uint8_t LoRa_info_response(uint8_t * UARTBuffer, uint8_t* number_TX_bytes);
+uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes);
 //void modbus_cmd_data2(void);
 unsigned int modbus_crc(uint8_t *UARTBuff, int length, unsigned int crc_calc);
 void ack_reply(void);
