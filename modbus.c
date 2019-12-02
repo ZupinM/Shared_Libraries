@@ -1227,6 +1227,9 @@ void modbus_timeout_handling(unsigned int *modbus_cnt) {
       mtimeout = 0xffffffff;                    //limit value
   
     if (modbus_timeout) {                       //timeout enabled   
+      if (modbus_cnt >= mtimeout) {   //sekunde
+        flags |= Modbus_timeout;
+      }else{
       *modbus_cnt++;
       flags &= ~Modbus_timeout;
     } else {
