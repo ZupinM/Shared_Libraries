@@ -12,7 +12,7 @@
 #include "LPC15xx.h"
 #include "uart.h"
 #include "../gpio.h"
-#include "uart_15xx.h"
+//#include "uart_15xx.h"
 
 
 // CodeRed - change for CMSIS 1.3
@@ -21,7 +21,7 @@
 volatile uint8_t UARTTxEmpty0 = 1;
 volatile uint8_t UARTTxEmpty1 = 1;
 volatile uint8_t UARTTxEmpty2 = 1;
-volatile uint8_t UARTBuffer[BUFSIZE];
+volatile uint8_t UARTBuffer0[BUFSIZE];
 volatile uint8_t UARTBuffer0[BUFSIZE];
 volatile uint8_t UARTBuffer1[BUFSIZE];
 volatile uint8_t UARTBuffer2[BUFSIZE];
@@ -32,7 +32,7 @@ volatile uint32_t UARTCount0 = 0;
 volatile uint32_t UARTtxCount0;
 volatile uint32_t UARTtxCount1;
 volatile uint32_t UARTtxCount2;
-volatile uint8_t *BufferTXPtr0;  
+         uint8_t *BufferTXPtr0;  
 volatile uint8_t *BufferTXPtr1;  
 volatile uint8_t *BufferTXPtr2;  
 volatile uint32_t UARTCount1 = 0;
@@ -41,7 +41,7 @@ volatile uint32_t UARTCount3 = 0;
 volatile uint8_t ModbusState0;
 volatile uint8_t ModbusState1;
 volatile uint8_t ModbusState2;
-uint8_t flow_ctrl_hangup_timer = 0; 
+uint16_t flow_ctrl_hangup_timer = 0; 
 unsigned char uartMode;
 
 /*****************************************************************************
@@ -107,7 +107,7 @@ void UART0_IRQHandler(void)
 /*****************************************************************************/
 
 void rs485_RTS_timeout(void){
-  if(LPC_GPIO_PORT->SET[RS485_RTS_PORT] | (1 << RS485_RTS_PIN)){  //  RTS - prevent hang-up
+  if(LPC_GPIO_PORT->PIN[RS485_RTS_PORT] & (1 << RS485_RTS_PIN)){  //  RTS - prevent hang-up
       flow_ctrl_hangup_timer++;
       if(flow_ctrl_hangup_timer > 1000){
         flow_ctrl_hangup_timer = 0;
@@ -382,22 +382,6 @@ void UART2Init(uint32_t baudrate)
 ** parameters:    buffer pointer, and data length
 ** Returned value:  None
 ** 
-*****************************************************************************/
-void UART0Send(uint8_t *BufferPtr, uint32_t Length)
-{
-  LPC_GPIO_PORT->SET[RS485_RTS_PORT] |= (1 << RS485_RTS_PIN);  // set RTS
-  LPC_USART0->INTENCLR |= (1 << 0);    //diasble rx ready interrupt
-
-  while (!(LPC_USART0->STAT & UART_STAT_TXRDY));
-
-  LPC_USART0->TXDATA = *BufferPtr;
-  BufferTXPtr0 = BufferPtr;
-  UARTtxCount0 = Length - 1;
-  LPC_USART0->INTENSET |= (1 << 2);   //enable TX ready interrupt
-
-  return;
-}
-
 /*****************************************************************************/
 void UART1Send(uint8_t *BufferPtr, uint32_t Length)
 {
@@ -413,8 +397,25 @@ void UART1Send(uint8_t *BufferPtr, uint32_t Length)
 
   return;
 }
-/*****************************************************************************/
-void UART2Send(uint8_t *BufferPtr, uint32_t Length)
+
+#ifdef KVARK //************************************************************/
+void UARTSend(uint8_t *BufferPtr, uint32_t Length)
+{
+  LPC_GPIO_PORT->SET[RS485_RTS_PORT] |= (1 << RS485_RTS_PIN);  // set RTS
+  LPC_USART0->INTENCLR |= (1 << 0);    //diasble rx ready interrupt
+
+  while (!(LPC_USART0->STAT & UART_STAT_TXRDY));
+
+  LPC_USART0->TXDATA = *BufferPtr;
+  BufferTXPtr0 = BufferPtr;
+  UARTtxCount0 = Length - 1;
+  LPC_USART0->INTENSET |= (1 << 2);   //enable TX ready interrupt
+
+  return;
+}
+#else
+#ifdef CONVERTER //********************************************************/
+void UARTSend(uint8_t *BufferPtr, uint32_t Length)
 {
   LPC_GPIO_PORT->SET[RS485_RTS_PORT] |= (1 << RS485_RTS_PIN);  // set RTS
   LPC_USART2->INTENCLR |= (1 << 0);    //diasble rx ready interrupt
@@ -428,6 +429,8 @@ void UART2Send(uint8_t *BufferPtr, uint32_t Length)
 
   return;
 }
+#endif //******************************************************************/
+#endif
 
 int modbus_newRequest()
 {
@@ -477,7 +480,7 @@ void modbus_ReqProcessed()
     UARTCount1 = 0;
   }
 
-  uartMode = UART_MODE_NONE;
+  //uartMode = UART_MODE_NONE;
 }
 
 void modbus_ReqProcessed1()

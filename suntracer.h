@@ -78,16 +78,16 @@ extern float flash_backup[0x100];
 
 //tracker_status;			//status kondicije, v kateri je tracker (napake, halli...)
 //#define ERR_OVERCURRENT_MOTOR_A		0		//if motor has exceed max_I_motor value
-#define ERR_HALL_A			1		//if there is no position feedback signal, but current is present
+//#define ERR_HALL_A			1		//if there is no position feedback signal, but current is present
 //#define ERR_TOOLONG_REF_A		2		//if moving to ref is more than XX minutes
-#define ERR_CABLE_A			3		//if there is no hall nor current flow
+//#define ERR_CABLE_A			3		//if there is no hall nor current flow
 //#define ERR_OVERCURRENT_MOTOR_B		4		
-#define ERR_HALL_B			5		
+//#define ERR_HALL_B			5		
 //#define ERR_TOOLONG_REF_B		6
-#define ERR_CABLE_B			7
+//#define ERR_CABLE_B			7
 		
 //#define SF_POWER_FAILURE		8		//uC reset occured
-#define SF_BUTTON_PRESSED		9		//if button was pressed anytime after last status clear
+//#define SF_BUTTON_PRESSED		9		//if button was pressed anytime after last status clear
 #define ERR_SYNCH_RUN_DIFFERENCE	10		//too much differences between A and B in synchronous run mode
 //#define SF_MOVING_OUT_A		   	11		//motor A is moving in
 //#define	SF_MOVING_IN_A			12		//motor A is moving out
@@ -138,8 +138,8 @@ extern float flash_backup[0x100];
 #define multi_key           0	//"1" = one button is already pressed
 #define manual_drive        1	//"1" = motor is moving manualy
 //#define btn_stuck           2	//"1" = B axis motor in function
-#define tick_20ms           3   //"1" = 20ms tick appear
-#define tick_1ms            4	//"1" = naredi/se dela referenca A
+//#define tick_20ms           3   //"1" = 20ms tick appear
+//#define tick_1ms            4	//"1" = naredi/se dela referenca A
 #define do_ref_B            5	//"1" = naredi/se dela referenca B
 
 #define focus_detect        6   //"1" = 
@@ -159,7 +159,7 @@ extern float flash_backup[0x100];
 #define SelectFineTuneSensorA   19  //fine tune senzor...da ne regulirata oba hkrati
 #define SelectFineTuneSensorB   20
 #define tiv2627_InUse           21  //"1" = pomeni, da je v uprabi TIV26 ali 27E nima senzinga na koncnem stikalu - referenca se dela ko je timeout impulzov (tiv26, tiv27)
-#define Modbus_timeout		22
+//#define Modbus_timeout		22
 
 //bflags;
 #define time_enable     0	//"1" = time used for positioning

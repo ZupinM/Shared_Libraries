@@ -18,7 +18,7 @@
 #include "bldc.h"
 
 //#include "config.h"
-#include "eeprom.h"
+#include "../eeprom.h"
 //#include "usb_lib.h"
 //#include "hw_config.h"
 //#include "usb_pwr.h"

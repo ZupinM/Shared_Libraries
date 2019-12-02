@@ -1,7 +1,7 @@
 
 #include "LPC15xx.h"                        /* LPC11xx definitions */
 #include <stdio.h>
-#include "main.h"
+#include "../main.h"
 #include "rtc.h"
 
 #include "suntracer.h"

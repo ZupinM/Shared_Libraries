@@ -63,8 +63,8 @@ const unsigned char bldc_ccw_next[7][3]={
 #include "bldc.h"
 #include "lpc15xx.h"
 #include "pid.h"
-#include "main.h"
-#include "eeprom.h"
+#include "../main.h"
+#include "../eeprom.h"
 
 #include "focus.h"
 
@@ -104,7 +104,7 @@ int          bldc_pause;
 
 unsigned int  bldc_Voltage;
 float         bldc_Uavg;
-unsigned int  bldc_Current;
+unsigned int  raw_Current;
 float         bldc_Iavg;
 float         zeroCurrent_voltage_0;
 float         zeroCurrent_voltage_1;
@@ -115,7 +115,7 @@ float battery_voltage = 3;
 float temperature;
 
 
-uint64_t                        bldc_Speed;     //RPM
+volatile unsigned int           bldc_Speed;     //RPM
 volatile unsigned int           number_of_poles = 2;
 volatile unsigned int           speed_sample_counter;
 volatile unsigned int           bldc_Speed_raw; //ticks from comutation to comutation
@@ -157,7 +157,7 @@ float MOTOR_START_VOLTAGE;
 float UNDERVOLTAGE_LEVEL;
 float MOTOR_CUTOF_LEVEL; 
 
-extern float mzp_current;   
+extern float bldc_Current;   
 
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
@@ -923,6 +923,10 @@ float bldc_U(unsigned char measuring_point) {
   }
 }
 
+float gpio_U(){
+  return bldc_U(SUPPLY);
+}
+
 float get_batt_U(){
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] &= ~(1<<BAT_GATE_PIN);  //Enable measurment mosfet
   LPC_IOCON->PIO[BAT_ADC_PORT][BAT_ADC_PIN] &= ~(3<<3);     //diasble pullup on battery adc
@@ -954,21 +958,21 @@ float bldc_I(unsigned char motor) {
   if(motor == 1){
     if(bldc_motors[1].status & BLDC_STATUS_ACTIVE){
     #ifdef I1_ADC_CHANNEL
-      bldc_Current=((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
-      bldc_Current -= zeroCurrent_voltage_1;
+      raw_Current=((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+      raw_Current -= zeroCurrent_voltage_1;
     #endif
     }
     else
-      bldc_Current = 0;
+      raw_Current = 0;
   }
   else if(motor == 0){
     if(bldc_motors[0].status & BLDC_STATUS_ACTIVE){
-      bldc_Current=((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+      raw_Current=((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
 
-      bldc_Current -= zeroCurrent_voltage_0;
+      raw_Current -= zeroCurrent_voltage_0;
     }
     else
-      bldc_Current = 0;
+      raw_Current = 0;
   }
 
   if(!(bldc_motors[0].status & BLDC_STATUS_MOVING)){ // get adc current reading in inactive states, to compenstae op.amp offset
@@ -981,16 +985,16 @@ float bldc_I(unsigned char motor) {
   }
   #endif
 
-  bldc_Iavg = bldc_Iavg + ( ((float)bldc_Current - bldc_Iavg)*0.01);//integrator
+  bldc_Iavg = bldc_Iavg + ( ((float)raw_Current - bldc_Iavg)*0.01);//integrator
 
-  mzp_current = (bldc_Iavg / bldc_cfg.IConvertRatio) * 0.5;
+  bldc_Current = (bldc_Iavg / bldc_cfg.IConvertRatio) * 0.5;
 
-  if(mzp_current < 0)            //if negative current
-   mzp_current = 0; 
+  if(bldc_Current < 0)            //if negative current
+   bldc_Current = 0; 
 
 
   if(bldc_cm->index == motor)
-  return (mzp_current);
+  return (bldc_Current);
 }
 
 void getFocus(void){

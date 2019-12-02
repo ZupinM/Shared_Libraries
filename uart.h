@@ -67,9 +67,8 @@ void UART2Init(uint32_t Baudrate);
 void UART0_IRQHandler(void);
 void UART1_IRQHandler(void);
 void UART2_IRQHandler(void);
-void UART0Send(uint8_t *BufferPtr, uint32_t Length);
+void UARTSend(uint8_t *BufferPtr, uint32_t Length);
 void UART1Send(uint8_t *BufferPtr, uint32_t Length);
-void UART2Send(uint8_t *BufferPtr, uint32_t Length);
 
 int modbus_discard(void);
 int modbus_newRequest(void);
