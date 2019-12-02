@@ -195,7 +195,7 @@ void modbus_cmd () {
       m_ack_state=0;
       modbus_cnt=0;             //no_modbus timeout
 
-      if(LoRa_info_response((uint8_t*) UARTBuffer0, (uint8_t*)number_TX_bytes0)){
+      if(LoRa_info_response((uint8_t*) UARTBuffer0, &number_TX_bytes0)){
         goto TX;
       }
       else {
@@ -1240,7 +1240,7 @@ void modbus_cmd () {
             if(UARTBuffer0[1] == MCMD_R_All_PARAM && crc_calc2 == 0){ //Read All Parameters 
               UARTBuffer0[26] = LoRa_id;
               UARTBuffer0[66] = LoRa_get_rssi();
-              number_TX_bytes0 =- 2; //delete and recalculate crc for LoRa packet
+              number_TX_bytes0 -= 2; //delete and recalculate crc for LoRa packet
               crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
               UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
               UARTBuffer0[number_TX_bytes0++] = crc_calc2 / 0x100;
@@ -1427,7 +1427,7 @@ void modbus_cmd1() {
     }
   }
   // normal mode processing
-  else if(LoRa_info_response((uint8_t *)UARTBuffer1, (uint8_t *)number_TX_bytes1)){
+  else if(LoRa_info_response((uint8_t *)UARTBuffer1, &number_TX_bytes1)){
     goto TX;
   }
 
@@ -2057,7 +2057,7 @@ void modbus_cmd3() {
 const char cmd2[] = {CMD_GET_STATUS, MCMD_R_All_PARAM, MCMD_R_boot_ver, MCMD_R_status, MCMD_R_events, MCMD_R_serial_numbers, MCMD_R_version};
 char cmdIdx = 0;
 
-uint8_t LoRa_info_response(uint8_t * UARTBuffer, uint8_t* number_TX_bytes){
+uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
   LoRa_Responded = 0;
   if(!
       (
