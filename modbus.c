@@ -24,7 +24,6 @@
 unsigned int crc_calc1;
 unsigned int crc_calc2;
 unsigned int crc_calc;
-unsigned int number_TX_bytes;
 unsigned char m_ack_state;                              // vsebuje opis napake, za katero MODBUS ukaz NI bil izvrsen
 unsigned int read_int_buf[30];
 unsigned char broadcastID;                              // 1 = broadcast call, 0 = normal call by ID
@@ -45,6 +44,7 @@ extern float UVccHALL_0, UVccHALL_1;
 
 extern MODE_TYPE mode;
 
+unsigned int number_TX_bytes0;
 unsigned int number_TX_bytes1;
 unsigned int number_TX_bytes2;
 
@@ -106,7 +106,6 @@ extern uint8_t routeOrders[MAX_SLAVE_ADDR+1][MAX_ROUTE_HOPS];
 #define fsendval(val) (((ftoint(val) << 24) & 0xff000000) | ((ftoint(val) << 8) & 0xff0000) | ((ftoint(val) >> 24) & 0xff) | ((ftoint(val) >> 8) & 0xff00)) 
 char commShort = 1;
 char commBuff1;
-extern volatile uint8_t UARTBuffer[BUFSIZE];
 uint8_t writePacket1[0x80];
 uint8_t writePacket2[0x80];
 #define MODE_NORMAL 0
@@ -129,7 +128,6 @@ void modbus_cmd () {
   unsigned int Utemp_old;
   float Ftemp;
   int eepromUpdate = 0;
-  uint32_t UARTCount;
 
   if (uartMode == UART_MODE_XBEE) {
     unsigned int dataLength = 0;
@@ -155,9 +153,9 @@ void modbus_cmd () {
         UARTCount1 = 0;
         return;
       }
-      UARTCount = dataLength;
-      memcpy((char *)UARTBuffer, (char *)UARTBuffer1, BUFSIZE);
-      crc_calc1 = modbus_crc((uint8_t *)UARTBuffer, UARTCount, CRC_NORMAL);
+      UARTCount0 = dataLength;
+      memcpy((char *)UARTBuffer0, (char *)UARTBuffer1, BUFSIZE);
+      crc_calc1 = modbus_crc((uint8_t *)UARTBuffer0, UARTCount0, CRC_NORMAL);
     }
     else {
       UARTCount1 = 0;
@@ -165,218 +163,44 @@ void modbus_cmd () {
     }
   } 
   else if (transceiver == LORA){
-    memcpy((char *)UARTBuffer, (char *)module.rxBuffer, module.packetLength);
-    UARTCount = module.packetLength;
+    memcpy((char *)UARTBuffer0, (char *)module.rxBuffer, module.packetLength);
+    UARTCount0 = module.packetLength;
   } 
-  else if (uartMode == UART_MODE_RS485) {
-    UARTCount = UARTCount0;
-    memcpy((char *)UARTBuffer, (char *)UARTBuffer0, BUFSIZE);
-  }
 
 	
   //----- broadcast naslov? ------
   broadcastID = NO_BROADCAST;
-  if ((UARTCount > 0) && (UARTBuffer[0] == 0))
+  if ((UARTCount0 > 0) && (UARTBuffer0[0] == 0))
     broadcastID = BROADCAST_CALL;
   //-------------------------------
 
-  if ((UARTCount > 0) && (
-   (UARTBuffer[0] == slave_addr) ||
-   (UARTBuffer[0] == LoRa_id && transceiver == LORA) ||
+  if ((UARTCount0 > 0) && (
+   (UARTBuffer0[0] == slave_addr) ||
+   (UARTBuffer0[0] == LoRa_id && transceiver == LORA) ||
    (broadcastID == BROADCAST_CALL) ||
-   (UARTBuffer[0] != slave_addr && transceiver == XBEE && ((UARTBuffer[1] == CMD_RUN_GET_VOLTAGE || UARTBuffer[1] == CMD_RUN_GET_LOADER_VER ||
-     UARTBuffer[1] == CMD_RUN_GET_VERSION) && crc_calc1 == 0))
+   (UARTBuffer0[0] != slave_addr && transceiver == XBEE && ((UARTBuffer0[1] == CMD_RUN_GET_VOLTAGE || UARTBuffer0[1] == CMD_RUN_GET_LOADER_VER ||
+     UARTBuffer0[1] == CMD_RUN_GET_VERSION) && crc_calc1 == 0))
      )) {
 
-    crc_calc = modbus_crc((uint8_t *)UARTBuffer, UARTCount, CRC_NORMAL);
+    crc_calc = modbus_crc((uint8_t *)UARTBuffer0, UARTCount0, CRC_NORMAL);
 
     if (crc_calc == 0) {
       if(transceiver == NONE)
         baudrate_timeout = 1;
-      rxcnt = UARTCount - 2;
+      rxcnt = UARTCount0 - 2;
       modbus_indicator = 10;
       //green_led=25;		//utrip zelene LED, komunikacija RS485
 
       m_ack_state=0;
       modbus_cnt=0;             //no_modbus timeout
 
-      if(((UARTBuffer[0] == LoRa_id ||                       // slaveID or broadcast(0x0) for SN setting, set settings
-            UARTBuffer[0] == 0x00 ||
-            UARTBuffer[1] == INTCOM_LORA_SET_ID_BY_SN ||
-            UARTBuffer[1] == INTCOM_LORA_SET_SETTINGS ||
-            UARTBuffer[1] == INTCOM_LORA_GET_RSSI ||
-              (UARTBuffer[0] == 0xFF &&                          // broadcast(0xFF) for SN getting
-              UARTBuffer[1] == INTCOM_CONV_GET_SN_BY_ID)) &&
-          transceiver == LORA) ||                               // << LoRa condition
-        ((UARTBuffer[1] == CMD_RUN_GET_LOADER_VER ||
-        UARTBuffer[1] == CMD_RUN_GET_VERSION ||
-        UARTBuffer[1] == CMD_RUN_GET_VOLTAGE
-        )
-        && (transceiver == XBEE))) {                                  // ZigBee condition
-    
-    mode = MODE_NORMAL;
-
- //   UARTBuffer[0] = UARTBuffer[0];
-   // UARTBuffer[1] = UARTBuffer[1];
-
-    switch (UARTBuffer[1]) {
-
-     case CMD_RUN_GET_LOADER_VER: {
-        unsigned short ver = getVersionB();
-        UARTBuffer[2] = MACK_OK;
-        UARTBuffer[3] = ver / 0x100;
-        UARTBuffer[4] = ver % 0x100;
-        number_TX_bytes = 5;
-        append_crc();
+      if(LoRa_info_response((uint8_t*) UARTBuffer0, (uint8_t*)number_TX_bytes0)){
         goto TX;
-        break;
       }
-      case CMD_RUN_GET_VERSION: {
-
-        unsigned short ver = getVersion();
-        UARTBuffer[2] = MACK_OK;
-        UARTBuffer[3] = ver / 0x100;
-        UARTBuffer[4] = ver % 0x100;
-        number_TX_bytes = 5;
-        append_crc();
-        goto TX;
-        break;
-      }
-      case CMD_RUN_GET_VOLTAGE: {
-        float voltage = bldc_U(SUPPLY);
-        number_TX_bytes = mcmd_read_float(voltage, (char*)UARTBuffer);
-        append_crc();
-        goto TX;
-        break;
-      }
-      case CMD_ZB2RS_RESET: { 
-        if (UARTBuffer[0] == LoRa_id || transceiver == XBEE) {
-          flags |= (1 << reset_it);   
-          reset_status = RESET_MANUAL;
-          UARTBuffer[2] = MACK_OK;
-          number_TX_bytes = 3;
-          append_crc();
-          goto TX;
-        }
-        break;    
-      }
-
-      case INTCOM_LORA_SET_SETTINGS: {
-
-        if(!(UARTBuffer[0] == 0x0 || UARTBuffer[0] == 0xFF || UARTBuffer[0] == slave_addr)) {
-          UARTCount = 0;
-          number_TX_bytes = 0;
-          return;
-        }
-
-        if(UARTBuffer[2] != 0xff) 
-          module.channel = UARTBuffer[2];
-        module.power = UARTBuffer[3] & 0x03;
-        module.spFactor = (UARTBuffer[3] & 0xf0) >> 4;
-        module.LoRa_BW =  UARTBuffer[4]; 
-        eeprom_write(SYS_VARS_EE); 
-
-        if(UARTBuffer[3] & 0x04){
-          LoRa_channel_received = 1;
-          UARTBuffer[2] = LoRa_get_rssi();
-          number_TX_bytes = 3;
-          append_crc();
-          goto TX;                                  
-        }
-
-        LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
-        //timeout_master_check = 400000;
-        if(UARTBuffer[0] < 0xff){
-          UARTBuffer[2] = MACK_OK;
-          number_TX_bytes = 3;
-          append_crc();
-          goto TX;                     
-        }
-
-        break;
-      }
-
-        case INTCOM_LORA_SET_ID_BY_SN: { 
-          int SNrx[4];  
-          int updateSuccess = 0;
-
-          if(UARTBuffer[0] == slave_addr){
-            LoRa_id = UARTBuffer[18];
-            updateSuccess = 1;
-            //UARTBuffer[2] = MACK_OK;
-          }else/* if(UARTBuffer[0] == 0xff || UARTBuffer[0] == 0x00)*/{
-
-            SNrx[0]  = UARTBuffer[2] << 24;
-            SNrx[0] |= UARTBuffer[3] << 16;
-            SNrx[0] |= UARTBuffer[4] << 8;
-            SNrx[0] |= UARTBuffer[5];
-
-            SNrx[1]  = UARTBuffer[6] << 24;
-            SNrx[1] |= UARTBuffer[7] << 16;
-            SNrx[1] |= UARTBuffer[8] << 8;
-            SNrx[1] |= UARTBuffer[9];
-
-            SNrx[2]  = UARTBuffer[10] << 24;
-            SNrx[2] |= UARTBuffer[11] << 16;
-            SNrx[2] |= UARTBuffer[12] << 8;
-            SNrx[2] |= UARTBuffer[13];
-
-            SNrx[3]  = UARTBuffer[14] << 24;
-            SNrx[3] |= UARTBuffer[15] << 16;
-            SNrx[3] |= UARTBuffer[16] << 8;
-            SNrx[3] |= UARTBuffer[17];
-
-            if(SNrx[0] == SN[0] && SNrx[1] == SN[1] && SNrx[2] == SN[2] && SNrx[3] == SN[3]){
-              LoRa_id = UARTBuffer[18];
-              updateSuccess = 1;
-            }
-          }
+      else {
 
 
-          if(updateSuccess){
-            // save data
-            eeprom_write(SYS_VARS_EE); 
-
-            read_int_buf[0] = (available_positioners[0] << 24) | (available_positioners[1] << 16) | (available_positioners[2] << 8) | available_positioners[3] ;
-            read_int_buf[2] = (available_positioners[4] << 24) | (available_positioners[5] << 16) | (available_positioners[6] << 8) | available_positioners[7] ;
-
-            mcmd_read_int(2, slave_addr);
-            goto TX;
-          }else{
-            UARTCount  = 0;
-            number_TX_bytes = 0;
-            return;
-          }
-          break;
-        }
-
-        case INTCOM_CONV_GET_SN_BY_ID: {
-            read_int_buf[0] = SN[0];
-            read_int_buf[1] = SN[1];
-            read_int_buf[2] = SN[2];
-            read_int_buf[3] = SN[3];
-
-
-            mcmd_read_int(4, LoRa_id); 
-            goto TX;
-            break;
-        }
-        
-        case INTCOM_LORA_GET_RSSI: {    
-            if(UARTBuffer[0] == LoRa_id){   
-              UARTBuffer[2] = LoRa_get_rssi();
-              number_TX_bytes = 3;
-              append_crc();
-              goto TX;
-            }
-            break;
-          }
-        }
-                        
-      } else {
-
-
-      switch (UARTBuffer[1]) {
+      switch (UARTBuffer0[1]) {
         // reset 
         case MCD_W_reset: {					 	
           ack_reply();
@@ -391,7 +215,7 @@ void modbus_cmd () {
 
           read_int_buf[0] = tracker_status;
           read_int_buf[1] = tracker_exstatus;
-          mcmd_read_int(2, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(2, slave_addr);
           break;
         }
         // Clear STATUS
@@ -405,9 +229,9 @@ void modbus_cmd () {
         }
         // W SLAVE ADDRESS
         case MCMD_W_slave_addr: {  				 	
-          if((UARTBuffer[2] > 0) && (UARTBuffer[2] <= 64))
+          if((UARTBuffer0[2] > 0) && (UARTBuffer0[2] <= 64))
           {
-            Utemp=UARTBuffer[2];
+            Utemp=UARTBuffer0[2];
             ack_reply();
             slave_addr = Utemp;
             eepromUpdate = 1;
@@ -420,14 +244,14 @@ void modbus_cmd () {
         }
 				
         case MCMD_W_SERIAL_slave_addr: {
-          Utemp = UARTBuffer[2];
-          Utemp |= ((unsigned int)UARTBuffer[3]) << 8;
-          Utemp |= ((unsigned int)UARTBuffer[4]) << 16;
-          Utemp |= ((unsigned int)UARTBuffer[5]) << 24;
+          Utemp = UARTBuffer0[2];
+          Utemp |= ((unsigned int)UARTBuffer0[3]) << 8;
+          Utemp |= ((unsigned int)UARTBuffer0[4]) << 16;
+          Utemp |= ((unsigned int)UARTBuffer0[5]) << 24;
           
           if (SN[0]==Utemp) {
-            if((UARTBuffer[6] > 0) && (UARTBuffer[6] <= 128)) {
-              Utemp=UARTBuffer[6];
+            if((UARTBuffer0[6] > 0) && (UARTBuffer0[6] <= 128)) {
+              Utemp=UARTBuffer0[6];
               ack_reply();
               slave_addr = Utemp;
               eepromUpdate = 1;
@@ -442,23 +266,23 @@ void modbus_cmd () {
 
         // USUPPLY
         case MCMD_R_Usupply: {				   
-          mcmd_read_float(bldc_U(SUPPLY), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_U(SUPPLY), (char *)UARTBuffer0);
           break;
         }
         // IMOTOR
         case MCMD_R_Imotor: {					   
-          mcmd_read_float(bldc_Current, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Current, (char *)UARTBuffer0);
           break;
         }
 
         case MCMD_R_MSpeed: {		
           read_int_buf[0] = bldc_Speed;		
-          mcmd_read_int(1, slave_addr);		
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);		
           break;		
         }		
         case MCMD_R_NPoles: {		
           read_int_buf[0] = number_of_poles;		
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;		
         }		
         case MCMD_W_NPoles: {
@@ -477,7 +301,7 @@ void modbus_cmd () {
           read_int_buf[1] = SN[1];
           read_int_buf[2] = SN[2];
           read_int_buf[3] = SN[3];
-          mcmd_read_int(4, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(4, slave_addr);
           break;
         }
         // VERSION
@@ -485,7 +309,7 @@ void modbus_cmd () {
           float temp;
           temp = (float)swVersion.sw_version;
           temp /= 1000.0;				// verzija je napisana v int 			   			
-          mcmd_read_float(temp, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(temp, (char *)UARTBuffer0);
           break;
         } 
         case MCMD_R_boot_ver: {
@@ -493,23 +317,23 @@ void modbus_cmd () {
           read_int_buf[1] = BOOT_DEVTYPE;
           read_int_buf[2] = BOOT_HW_REV;
           read_int_buf[3] = BOOT_APP_MINVERSION;
-          mcmd_read_int(4, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(4, slave_addr);
           break;
         }
         // REMAIN IMPULSES A
         case MCMD_R_remain_A: {                         // ostanek impulzov do 0000 od zadnjega REF			 							
-          mcmd_read_float(bldc_remaining(0), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_remaining(0), (char *)UARTBuffer0);
           break;
         }
         // REMAIN IMPULSES B
         case MCMD_R_remain_B: {                         // ostanek impulzov do 0000 od zadnjega REF			 							
-          mcmd_read_float(bldc_remaining(1), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_remaining(1), (char *)UARTBuffer0);
           break;
         }
         case MCMD_R_events: {
           read_int_buf[0] = events;
           events = 0;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           tracker_exstatus &= ~EFS_EVENTS_ACTIVE;
           events = 0;
           break;
@@ -524,7 +348,7 @@ void modbus_cmd () {
           read_int_buf[5] = 0;
           read_int_buf[6] = 0;
           read_int_buf[7] = 0;
-          mcmd_read_int(8, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(8, slave_addr);
           break;
         }
         case  MCMD_R_errorB_stats: {			
@@ -536,7 +360,7 @@ void modbus_cmd () {
           read_int_buf[5] = 0;
           read_int_buf[6] = 0;
           read_int_buf[7] = 0;
-          mcmd_read_int(8, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(8, slave_addr);
           break;
         }
         //***** commands *****
@@ -554,19 +378,19 @@ void modbus_cmd () {
         }
         // R POSITION A
         case MCMD_R_position_A: {					
-          mcmd_read_float(bldc_position(0), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_position(0), (char *)UARTBuffer0);
           break;
         }
         // R DESTINATION A
         case MCMD_R_destination_A: {														
-          mcmd_read_float(bldc_target(0), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_target(0), (char *)UARTBuffer0);
           break;
         }
         // W DESTINATION A
         case MCMD_W_destination_A: {		                        
           int windmode = 0;
 
-          if ((rxcnt == 7) && (UARTBuffer[6]))
+          if ((rxcnt == 7) && (UARTBuffer0[6]))
             windmode = 1;
 
             bldc_manual(0);  // mzp
@@ -593,7 +417,7 @@ void modbus_cmd () {
         case MCMD_W_destinationImp_A: {		                        
           int windmode = 0;
 
-          if((rxcnt == 7) && (UARTBuffer[6]))
+          if((rxcnt == 7) && (UARTBuffer0[6]))
             windmode = 1;
 
           int res = bldc_setPositionImp(0, mcmd_write_int1(), windmode);
@@ -631,19 +455,19 @@ void modbus_cmd () {
 
         // R POSITION B
         case MCMD_R_position_B: {					
-          mcmd_read_float(bldc_position(1), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_position(1), (char *)UARTBuffer0);
           break;
         }
         // R DESTINATION B
         case MCMD_R_destination_B: {														
-          mcmd_read_float(bldc_target(1), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_target(1), (char *)UARTBuffer0);
           break;
         }
         // W DESTINATION B
         case MCMD_W_destination_B: {		                        
           int windmode = 0;
 
-          if((rxcnt == 7) && (UARTBuffer[6])) windmode = 1;
+          if((rxcnt == 7) && (UARTBuffer0[6])) windmode = 1;
           bldc_manual(0);  // mzp
           usb_drive = 0;
           int res = bldc_setPosition(1, mcmd_write_float1(), windmode);
@@ -667,7 +491,7 @@ void modbus_cmd () {
         case MCMD_W_destinationImp_B: {		                        
           int windmode = 0;
 
-          if((rxcnt == 7) && (UARTBuffer[6]))
+          if((rxcnt == 7) && (UARTBuffer0[6]))
             windmode = 1;
 
           int res = bldc_setPositionImp(1, mcmd_write_int1(), windmode);
@@ -705,7 +529,7 @@ void modbus_cmd () {
         
         case MCMD_R_AxisState: {
           read_int_buf[0] = bldc_GetEnabledMotors();
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
 
@@ -810,22 +634,22 @@ void modbus_cmd () {
   
         case MCMD_R_Voltage_hall: {
           read_int_buf[0] = voltage_select_0 | (voltage_select_1 << 8);
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;				
         }
 
         case MCMD_R_Batt_voltage: {
-          mcmd_read_float(get_batt_U(), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(get_batt_U(), (char *)UARTBuffer0);
           break;				
         }
 
         // U hall
         case MCMD_R_Uhall_0:	{				   
-          mcmd_read_float(bldc_U(HALL0), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_U(HALL0), (char *)UARTBuffer0);
           break;
         }
         case MCMD_R_Uhall_1:	{				   
-          mcmd_read_float(bldc_U(HALL1), (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_U(HALL1), (char *)UARTBuffer0);
           break;
         }
 
@@ -833,7 +657,7 @@ void modbus_cmd () {
         case MCMD_R_Hall_cntDown: {
           read_int_buf[0] = bldc_GetInvertHall(0) ;
           read_int_buf[0] |= bldc_GetInvertHall(1) * 2;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
         
@@ -848,7 +672,7 @@ void modbus_cmd () {
         case MCMD_R_Invert_motor: {
           read_int_buf[0] = bldc_GetInvert(0);
           read_int_buf[0] |= bldc_GetInvert(1) * 2;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
         
@@ -865,7 +689,7 @@ void modbus_cmd () {
           read_int_buf[0] |= (ES_1_normallyOpenLo << 1);
           read_int_buf[0] |= (ES_0_normallyOpenHi << 2);
           read_int_buf[0] |= (ES_1_normallyOpenHi << 3);
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
 
@@ -882,7 +706,7 @@ void modbus_cmd () {
   
         case MCMD_R_EndSwithDetectA: {
           Ftemp = bldc_Motor(0)->end_switchDetect;								
-          mcmd_read_float(Ftemp, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(Ftemp, (char *)UARTBuffer0);
           break;
         }
 
@@ -897,7 +721,7 @@ void modbus_cmd () {
 
         // MIN RANGE A
         case MCMD_R_min_range_A: {
-          mcmd_read_float(bldc_Motor(0)->min_position, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->min_position, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_min_range_A: {
@@ -913,7 +737,7 @@ void modbus_cmd () {
 
         // MAX RANGE A
         case MCMD_R_max_range_A: {
-          mcmd_read_float(bldc_Motor(0)->max_position, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->max_position, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_max_range_A: { 
@@ -927,7 +751,7 @@ void modbus_cmd () {
         }
         
         case  MCMD_R_ZeroOffsetA: {
-          mcmd_read_float(bldc_Motor(0)->home_offset, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->home_offset, (char *)UARTBuffer0);
           break;
         }
         
@@ -943,7 +767,7 @@ void modbus_cmd () {
 				
         // MAX I MOTOR A
         case MCMD_R_max_Imotor_A: {					
-          mcmd_read_float(bldc_Motor(0)->I_limit, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->I_limit, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_max_Imotor_A: {
@@ -958,7 +782,7 @@ void modbus_cmd () {
         
         case MCMD_R_EndSwithDetectB: {
           Ftemp = bldc_Motor(1)->end_switchDetect;								
-          mcmd_read_float(Ftemp, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(Ftemp, (char *)UARTBuffer0);
           break;
         }
 
@@ -973,7 +797,7 @@ void modbus_cmd () {
 
         //MIN RANGE	B
         case MCMD_R_min_range_B: {
-          mcmd_read_float(bldc_Motor(1)->min_position, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->min_position, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_min_range_B: {
@@ -989,7 +813,7 @@ void modbus_cmd () {
 
         //MAX RANGE	B
         case MCMD_R_max_range_B: {
-          mcmd_read_float(bldc_Motor(1)->max_position, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->max_position, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_max_range_B: { 
@@ -1003,7 +827,7 @@ void modbus_cmd () {
         }
         
         case  MCMD_R_ZeroOffsetB: {
-          mcmd_read_float(bldc_Motor(1)->home_offset, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->home_offset, (char *)UARTBuffer0);
           break;
         }
         
@@ -1019,7 +843,7 @@ void modbus_cmd () {
         
         //MAX I MOTOR B
         case MCMD_R_max_Imotor_B: {					
-          mcmd_read_float(bldc_Motor(1)->I_limit, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->I_limit, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_max_Imotor_B: {
@@ -1034,7 +858,7 @@ void modbus_cmd () {
 
         //U SUPPLY FACTOR
         case MCMD_R_Usupply_factor: {
-          mcmd_read_float(bldc_config()->UConvertRatio, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_config()->UConvertRatio, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_Usupply_factor: {
@@ -1048,7 +872,7 @@ void modbus_cmd () {
         }
         // I MOTOR FACTOR
         case MCMD_R_Imotor_factor: {
-          mcmd_read_float(bldc_config()->IConvertRatio, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_config()->IConvertRatio, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_Imotor_factor: {
@@ -1062,7 +886,7 @@ void modbus_cmd () {
         }
         //REST POSITION	A
         case MCMD_R_modbus_timeout_position_A: {			
-          mcmd_read_float(bldc_Motor(0)->modbus_timeout_position, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->modbus_timeout_position, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_modbus_timeout_position_A: {
@@ -1076,7 +900,7 @@ void modbus_cmd () {
         }	
         // REST POSITION B
         case MCMD_R_modbus_timeout_position_B: {			
-          mcmd_read_float(bldc_Motor(1)->modbus_timeout_position, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->modbus_timeout_position, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_modbus_timeout_position_B: {
@@ -1092,7 +916,7 @@ void modbus_cmd () {
         // MODBUS TIMEOUT
         case MCMD_R_modbus_timeout: {			
           read_int_buf[0] = modbus_timeout;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
         
@@ -1109,7 +933,7 @@ void modbus_cmd () {
         // MODBUS TIMEOUT DELAY
         case MCMD_R_modbus_timeout_delay: {
           read_int_buf[0] = modbus_timeout_delay;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
         
@@ -1126,7 +950,7 @@ void modbus_cmd () {
         //TOO LONG REFERENCE
         case MCMD_R_ref_toolong: {			
           read_int_buf[0] = bldc_config()->homing_timeout;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
         case MCMD_W_ref_toolong: {
@@ -1140,7 +964,7 @@ void modbus_cmd () {
         }
         //GEAR RATIO A
         case MCMD_R_gear_ratio_A: {
-          mcmd_read_float(bldc_Motor(0)->gear_ratio, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->gear_ratio, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_gear_ratio_A: {
@@ -1174,12 +998,12 @@ void modbus_cmd () {
         }
 		
         case MCMD_R_StartI_ratioA: {
-          mcmd_read_float(bldc_Motor(0)->I_Inrush_ratio, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->I_Inrush_ratio, (char *)UARTBuffer0);
           break;
         }
 
         case MCMD_R_StartI_timeA: {
-          mcmd_read_float(bldc_Motor(0)->I_Inrush_time, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->I_Inrush_time, (char *)UARTBuffer0);
           break;
         }
 
@@ -1194,13 +1018,13 @@ void modbus_cmd () {
         }
         
         case MCMD_R_Detection_I_A: {
-          mcmd_read_float(bldc_Motor(0)->Idetection, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->Idetection, (char *)UARTBuffer0);
           break;				
         }
 
         // GEAR RATIO B
         case MCMD_R_gear_ratio_B: {
-          mcmd_read_float(bldc_Motor(1)->gear_ratio, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->gear_ratio, (char *)UARTBuffer0);
           break;
         }
         case MCMD_W_gear_ratio_B: {
@@ -1234,12 +1058,12 @@ void modbus_cmd () {
         }
 
         case MCMD_R_StartI_ratioB: {
-          mcmd_read_float(bldc_Motor(1)->I_Inrush_ratio, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->I_Inrush_ratio, (char *)UARTBuffer0);
           break;
         }
 
         case MCMD_R_StartI_timeB: {
-          mcmd_read_float(bldc_Motor(1)->I_Inrush_time, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->I_Inrush_time, (char *)UARTBuffer0);
           break;
         }
 
@@ -1254,7 +1078,7 @@ void modbus_cmd () {
         }
         
         case MCMD_R_Detection_I_B: {
-          mcmd_read_float(bldc_Motor(1)->Idetection, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->Idetection, (char *)UARTBuffer0);
           break;				
         }
 
@@ -1294,7 +1118,7 @@ void modbus_cmd () {
           read_int_buf[23] = bldc_positionImp(1);
           read_int_buf[24] = bldc_targetImp(1);
           // read_int_buf[25]=0;
-          mcmd_read_int(26, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(26, slave_addr);
           break;
         }	
 				
@@ -1321,12 +1145,12 @@ void modbus_cmd () {
         }
         case MCMD_R_FlashWritCnt: {
           read_int_buf[0] = FlashWriteCounter;
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }	
         
         case MCMD_R_Line_Resistance: {
-          mcmd_read_float(LineResistance, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(LineResistance, (char *)UARTBuffer0);
           break;	
         }
  
@@ -1337,7 +1161,7 @@ void modbus_cmd () {
         }
         
         case MCMD_R_MaxLine_Resistance: {
-          mcmd_read_float(max_line_resistance, (char *)UARTBuffer);
+          number_TX_bytes0 = mcmd_read_float(max_line_resistance, (char *)UARTBuffer0);
           break;	
         }
 
@@ -1355,7 +1179,7 @@ void modbus_cmd () {
         case MCMD_R_RampA:
           m_ack_state = MACK_UNRECOGNIZED_CMD;
           err_reply();
-          //mcmd_read_float(MotorA_ramp);
+          //number_TX_bytes0 = mcmd_read_float(MotorA_ramp);
           break;
         case MCMD_W_RampA:
           m_ack_state=MACK_UNRECOGNIZED_CMD;
@@ -1370,7 +1194,7 @@ void modbus_cmd () {
         case MCMD_R_RampB:
           m_ack_state = MACK_UNRECOGNIZED_CMD;
           err_reply();
-          //mcmd_read_float(MotorB_ramp);
+          //number_TX_bytes0 = mcmd_read_float(MotorB_ramp);
           break;
         case MCMD_W_RampB:
           m_ack_state = MACK_UNRECOGNIZED_CMD;
@@ -1395,38 +1219,40 @@ void modbus_cmd () {
       if(eepromUpdate) {
         eeprom_write(SYS_VARS_EE);
       }
+      crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
+      UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
+      UARTBuffer0[number_TX_bytes0++] = crc_calc2 / 0x100;
 
       if (broadcastID == NO_BROADCAST){ 	//if broadcast, do not send anything.
 
           if (uartMode == UART_MODE_XBEE) {
-            memcpy((char *)UARTBuffer1, (char *)UARTBuffer, BUFSIZE);
-            xbLength = xbSendPacketPrepare((char *)UARTBuffer1, number_TX_bytes);
+            memcpy((char *)UARTBuffer1, (char *)UARTBuffer0, BUFSIZE);
+            xbLength = xbSendPacketPrepare((char *)UARTBuffer1, number_TX_bytes0);
             UART1Send( (uint8_t *)(&xbData[0]), xbLength);
             UARTCount1 = 0;
           }
           else if(transceiver == LORA){
-            crc_calc2 = modbus_crc((uint8_t *)UARTBuffer, number_TX_bytes, CRC_NORMAL);
-            if(UARTBuffer[1] == MCMD_R_All_PARAM && crc_calc2 == 0){ //Read All Parameters 
-              UARTBuffer[26] = LoRa_id;
-              UARTBuffer[66] = LoRa_get_rssi();
+            crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
+            if(UARTBuffer0[1] == MCMD_R_All_PARAM && crc_calc2 == 0){ //Read All Parameters 
+              UARTBuffer0[26] = LoRa_id;
+              UARTBuffer0[66] = LoRa_get_rssi();
 
-              number_TX_bytes = number_TX_bytes - 2;
-              crc_calc2 = modbus_crc((uint8_t *)UARTBuffer, number_TX_bytes, CRC_NORMAL);
-              UARTBuffer[number_TX_bytes++] = crc_calc2 & 0xFF;
-              UARTBuffer[number_TX_bytes++] = crc_calc2 / 0x100;
+              number_TX_bytes0 =- 2; //delete and recalculate crc for LoRa packet
+              crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
+              UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
+              UARTBuffer0[number_TX_bytes0++] = crc_calc2 / 0x100;
             }
 
-            set_tx_flag((char *)UARTBuffer, number_TX_bytes);
+            set_tx_flag((char *)UARTBuffer0, number_TX_bytes0);
           }              
           else if (uartMode == UART_MODE_RS485) {
-            memcpy((char *)UARTBuffer0, (char *)UARTBuffer, BUFSIZE);
-            UART0Send( (uint8_t *)UARTBuffer0, number_TX_bytes );
+            UARTSend( (uint8_t *)UARTBuffer0, number_TX_bytes0);
 
             UARTCount0 = 0;
           }
       }
       broadcastID = NO_BROADCAST;
-      number_TX_bytes = 0;
+      number_TX_bytes0 = 0;
       if (flags & (1 << reset_it)) {				  //reset ukaz
         eeprom_write(SYS_VARS_EE);
         LPC_WWDT->FEED = 0xAA;				
@@ -1442,9 +1268,8 @@ void modbus_cmd () {
     }
   }
   
-  else if(transceiver == XBEE && UARTBuffer[0] != slave_addr) {
-    memcpy((char *)UARTBuffer0, (char *)UARTBuffer, BUFSIZE);
-    UART0Send( (uint8_t *)UARTBuffer0, UARTCount);
+  else if(transceiver == XBEE && UARTBuffer0[0] != slave_addr) {
+    UARTSend( (uint8_t *)UARTBuffer0, UARTCount0);
     UARTCount1 = 0;
   }
 
@@ -1479,7 +1304,7 @@ void modbus_cmd1() {
       return;
     }
 
-    memcpy((uint8_t *)UARTBuffer, (uint8_t *)UARTBuffer1, BUFSIZE);
+    //memcpy((uint8_t *)UARTBuffer0, (uint8_t *)UARTBuffer1, BUFSIZE);
     if (dataLength == -1) {
       UARTCount1 = 0;
       return;
@@ -1510,12 +1335,12 @@ void modbus_cmd1() {
 
   // check boot mode the upgrade mode
   if(crc_calc1 != 0) {
-    memcpy((uint8_t *)UARTBuffer1, (uint8_t *)UARTBuffer, BUFSIZE);   
+    memcpy((uint8_t *)UARTBuffer1, (uint8_t *)UARTBuffer0, BUFSIZE);   
     // check boot packet
     crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, UARTCount, CRC_BOOT);
 
     if(crc_calc1 != 0) {
-      memcpy((uint8_t *)UARTBuffer1, (uint8_t *)UARTBuffer, BUFSIZE);   
+      memcpy((uint8_t *)UARTBuffer1, (uint8_t *)UARTBuffer0, BUFSIZE);   
       // check upgrade
       crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, UARTCount, CRC_UPGRADE_NANOD);
       if(crc_calc1 == 0)
@@ -1600,283 +1425,97 @@ void modbus_cmd1() {
     }
   }
   // normal mode processing
-  else if(((UARTBuffer1[0] == slave_addr ||                       // slaveID or broadcast(0x0) for SN setting, set settings
-            UARTBuffer1[0] == 0x00 ||
-            UARTBuffer1[1] == INTCOM_LORA_SET_ID_BY_SN ||
-            UARTBuffer1[1] == INTCOM_LORA_SET_SETTINGS ||
-            UARTBuffer1[1] == INTCOM_LORA_GET_RSSI ||
-              (UARTBuffer1[0] == 0xFF &&                          // broadcast(0xFF) for SN getting
-              UARTBuffer1[1] == INTCOM_CONV_GET_SN_BY_ID)) &&
-          transceiver == LORA) ||                               // << LoRa condition
-        transceiver == XBEE) {                                  // ZigBee condition
-    
-    mode = MODE_NORMAL;
-
-    switch (UARTBuffer1[1]) {
-      case CMD_RUN_GET_LOADER_VER: {
-        unsigned short ver = getVersionB();
-        UARTBuffer1[2] = MACK_OK;
-        UARTBuffer1[3] = ver / 0x100;
-        UARTBuffer1[4] = ver % 0x100;
-        number_TX_bytes1 = 5;
-        goto TX;
-        break;
-      }
-      case CMD_RUN_GET_VERSION: {
-
-        unsigned short ver = getVersion();
-        UARTBuffer1[2] = MACK_OK;
-        UARTBuffer1[3] = ver / 0x100;
-        UARTBuffer1[4] = ver % 0x100;
-        number_TX_bytes1 = 5;
-        goto TX;
-        break;
-      }
-      case CMD_RUN_GET_VOLTAGE: {
-        float voltage = gpio_U();
-        number_TX_bytes1 = mcmd_read_float(voltage, (char *)UARTBuffer1);
-        goto TX;
-        break;
-      }
-      case CMD_ZB2RS_RESET: { 
-        if (UARTBuffer1[0] == slave_addr || transceiver == XBEE) {
-          flags |= (1 << reset_it);   
-          reset_status = RESET_MANUAL;
-          UARTBuffer1[2] = MACK_OK;
-          number_TX_bytes1 = 3;
-          goto TX;
-        }
-        break;    
-      }
-
-      case INTCOM_LORA_SET_SETTINGS: {
-
-        if(!(UARTBuffer1[0] == 0x0 || UARTBuffer1[0] == 0xFF || UARTBuffer1[0] == slave_addr)) {
-          UARTCount1 = 0;
-          number_TX_bytes1 = 0;
-          return;
-        }
-
-        if(UARTBuffer1[2] != 0xff) 
-          module.channel = UARTBuffer1[2];
-        module.power = UARTBuffer1[3] & 0x03;
-        module.spFactor = (UARTBuffer1[3] & 0xf0) >> 4;
-        module.LoRa_BW =  UARTBuffer1[4]; 
-
-#if (STORAGE_TYPE == STORAGE_FLASH)
-        flash_write(SYS_VARS_ADDR);                   //save parameters
-#elif (STORAGE_TYPE == STORAGE_EEPROM)
-        eeprom_write(SYS_VARS_EE); 
-#endif
-
-        if(UARTBuffer1[3] & 0x04){
-          LoRa_channel_received = 1;
-          UARTBuffer1[2] = LoRa_get_rssi();
-
-          number_TX_bytes1 = 3;
-          goto TX;                                  
-        }
-
-        LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
-        //timeout_master_check = 400000;
-        if(UARTBuffer1[0] < 0xff){
-          UARTBuffer1[2] = MACK_OK;
-          number_TX_bytes1 = 3;
-          goto TX;                     
-        }
-
-        break;
-      } 
-
-        case INTCOM_LORA_SET_ID_BY_SN: {
-
-          int SNrx[4];  
-          int updateSuccess = 0;
-
-          if(UARTBuffer1[0] == slave_addr){
-            slave_addr = UARTBuffer1[18];
-            updateSuccess = 1;
-            //UARTBuffer1[2] = MACK_OK;
-          }else/* if(UARTBuffer1[0] == 0xff || UARTBuffer1[0] == 0x00)*/{
-
-            SNrx[0]  = UARTBuffer1[2] << 24;
-            SNrx[0] |= UARTBuffer1[3] << 16;
-            SNrx[0] |= UARTBuffer1[4] << 8;
-            SNrx[0] |= UARTBuffer1[5];
-
-            SNrx[1]  = UARTBuffer1[6] << 24;
-            SNrx[1] |= UARTBuffer1[7] << 16;
-            SNrx[1] |= UARTBuffer1[8] << 8;
-            SNrx[1] |= UARTBuffer1[9];
-
-            SNrx[2]  = UARTBuffer1[10] << 24;
-            SNrx[2] |= UARTBuffer1[11] << 16;
-            SNrx[2] |= UARTBuffer1[12] << 8;
-            SNrx[2] |= UARTBuffer1[13];
-
-            SNrx[3]  = UARTBuffer1[14] << 24;
-            SNrx[3] |= UARTBuffer1[15] << 16;
-            SNrx[3] |= UARTBuffer1[16] << 8;
-            SNrx[3] |= UARTBuffer1[17];
-
-            if(SNrx[0] == SN[0] && SNrx[1] == SN[1] && SNrx[2] == SN[2] && SNrx[3] == SN[3]){
-              slave_addr = UARTBuffer1[18];
-              updateSuccess = 1;
-            }
-          }
-          LoRa_id = slave_addr;
-          if(updateSuccess){
-              // save data
-#if     (STORAGE_TYPE == STORAGE_FLASH)
-                flash_write(SYS_VARS_ADDR);                   //save parameters
-#elif   (STORAGE_TYPE == STORAGE_EEPROM)
-                eeprom_write(SYS_VARS_EE); 
-#endif    
-
-              UARTBuffer1[2] = available_positioners[0];
-              UARTBuffer1[3] = available_positioners[1]; 
-              UARTBuffer1[4] = available_positioners[2];
-              UARTBuffer1[5] = available_positioners[3];
-              UARTBuffer1[6] = available_positioners[4];
-              UARTBuffer1[7] = available_positioners[5];
-              UARTBuffer1[8] = available_positioners[6];
-              UARTBuffer1[9] = available_positioners[7];   
-
-              number_TX_bytes1 = 10;
-              goto TX; 
-            }else{
-              UARTCount1  = 0;
-              number_TX_bytes1 = 0;
-              return;
-            }
-          }       
-
-          case INTCOM_CONV_GET_SN_BY_ID: {
-
-            UARTBuffer1[2] = (SN[0] >> 24) & 0xff;
-            UARTBuffer1[3] = (SN[0] >> 16) & 0xff;
-            UARTBuffer1[4] = (SN[0] >> 8)  & 0xff;  
-            UARTBuffer1[5] =  SN[0]        & 0xff;  
-
-            UARTBuffer1[6] = (SN[1] >> 24) & 0xff;
-            UARTBuffer1[7] = (SN[1] >> 16) & 0xff;
-            UARTBuffer1[8] = (SN[1] >> 8)  & 0xff;  
-            UARTBuffer1[9] = SN[1]         & 0xff; 
-
-            UARTBuffer1[10] = (SN[2] >> 24) & 0xff;
-            UARTBuffer1[11] = (SN[2] >> 16) & 0xff;
-            UARTBuffer1[12] = (SN[2] >> 8)  & 0xff;  
-            UARTBuffer1[13] =  SN[2]        & 0xff; 
-
-            UARTBuffer1[14] = (SN[3] >> 24) & 0xff;
-            UARTBuffer1[15] = (SN[3] >> 16) & 0xff;
-            UARTBuffer1[16] = (SN[3] >> 8)  & 0xff;  
-            UARTBuffer1[17] =  SN[3]        & 0xff;
-
-            number_TX_bytes1 = 18;
-            goto TX; 
-          } 
-                  
-          case INTCOM_LORA_GET_RSSI: {    
-            if(UARTBuffer1[0] == slave_addr){   
-              UARTBuffer1[2] = LoRa_get_rssi();
-              number_TX_bytes1 = 3;
-              goto TX;
-            }
-          }
-
-        }
-      }
+  else if(LoRa_info_response((uint8_t *)UARTBuffer1, (uint8_t *)number_TX_bytes1)){
+    goto TX;
+  }
 
   // send to positioner
-      if(upgradeCount == 1) {
-        // upgrade write command
-        UART2Send((uint8_t *)UARTBuffer2_long, number_TX_bytes1);
-        upgradeCount = 0;
+  if(upgradeCount == 1) {
+    // upgrade write command
+    UARTSend((uint8_t *)UARTBuffer2_long, number_TX_bytes1);
+    upgradeCount = 0;
 
-      } else {
-        memcpy((char *)UARTBuffer2, (char *)UARTBuffer1, BUFSIZE);
-        UART2Send((uint8_t *)UARTBuffer2, UARTCount);
-      }
-        UARTCount1 = 0;
-        number_TX_bytes1 = 0;
-        return;
+  } else {
+    memcpy((char *)UARTBuffer2, (char *)UARTBuffer1, BUFSIZE);
+    UARTSend((uint8_t *)UARTBuffer2, UARTCount);
+  }
+  UARTCount1 = 0;
+  number_TX_bytes1 = 0;
+  return;
 
-        TX:
-        // TX upgrade (write) answer
-        if(mode == MODE_UPGRADE && UARTCount == 0x93) {
+  TX:
+  // TX upgrade (write) answer
+  if(mode == MODE_UPGRADE && UARTCount == 0x93) {
 
-          // send back to sigma
-          number_TX_bytes1 = encryptData((char *)&UARTBuffer1[1], number_TX_bytes1 - 1);
-          crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, ++number_TX_bytes1, CRC_BOOT);
-          UARTBuffer1[number_TX_bytes1++] = crc_calc1 & 0xFF;
-          UARTBuffer1[number_TX_bytes1++] = crc_calc1 / 0x100;
+    // send back to sigma
+    number_TX_bytes1 = encryptData((char *)&UARTBuffer1[1], number_TX_bytes1 - 1);
+    crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, ++number_TX_bytes1, CRC_BOOT);
+    UARTBuffer1[number_TX_bytes1++] = crc_calc1 & 0xFF;
+    UARTBuffer1[number_TX_bytes1++] = crc_calc1 / 0x100;
 
-          if(transceiver == LORA){
-            set_tx_flag((char *)UARTBuffer1, number_TX_bytes1);
-          }
-          else if(transceiver == XBEE){
-
-            xbLength = xbSendPacketPrepare((char *)UARTBuffer1, number_TX_bytes1);    
-            UART1Send( (uint8_t *)(&xbData[0]), xbLength);
-          }
-
-          UARTCount = 0;
-          number_TX_bytes1 = 0;
-        }
-        // TX normal answer
-        else if((mode == MODE_NORMAL &&                       // normal mode
-                (UARTBuffer1[1] == CMD_RUN_GET_LOADER_VER ||    // get boot version
-                  UARTBuffer1[1] == CMD_RUN_GET_VERSION ||      // get version
-                  UARTBuffer1[1] == CMD_RUN_GET_VOLTAGE ||      // get voltage
-                  UARTBuffer1[1] == CMD_ZB2RS_RESET ||          // module reset
-                  UARTBuffer1[1] == INTCOM_LORA_SET_SETTINGS || // set LoRa settings
-                  UARTBuffer1[1] == INTCOM_LORA_GET_SETTINGS || // get LoRa settings
-                  UARTBuffer1[1] == INTCOM_LORA_SET_ID_BY_SN || // set LoRa ID
-                  (UARTBuffer1[1] == INTCOM_CONV_GET_SN_BY_ID && UARTBuffer1[0] != 100) || // get LoRa SN
-                  UARTBuffer1[1] == INTCOM_LORA_GET_RSSI)       // get LoRa RSSI
-               )) {
-
-         crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, number_TX_bytes1, CRC_NORMAL);
-         UARTBuffer1[number_TX_bytes1++] = crc_calc1 & 0xFF;
-         UARTBuffer1[number_TX_bytes1++] = crc_calc1 / 0x100;
-
-         if(transceiver == LORA){
-
-          int time1 = slaveCommandTimeout;
-          while(true) {
-            if(slaveCommandTimeout - time1 > 15)
-              break;
-          }
-
-          
-          if(LoRa_channel_received)
-            LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
-          else  
-            set_tx_flag((char *)UARTBuffer1, number_TX_bytes1);
+    if(transceiver == LORA){
+      set_tx_flag((char *)UARTBuffer1, number_TX_bytes1);
     }
     else if(transceiver == XBEE){
-
       xbLength = xbSendPacketPrepare((char *)UARTBuffer1, number_TX_bytes1);    
       UART1Send( (uint8_t *)(&xbData[0]), xbLength);
     }
-
     UARTCount = 0;
     number_TX_bytes1 = 0;
-
-    if (flags & (1 << reset_it)) {    
-      while (rxTimeout0 < 1000);    
-#if (STORAGE_TYPE == STORAGE_FLASH)
-      flash_write(SYS_VARS_ADDR);                   //save parameters
-#elif (STORAGE_TYPE == STORAGE_EEPROM)
-      eeprom_write(SYS_VARS_EE); 
-#endif    
-      LPC_WWDT->FEED = 0xAA;            
-      LPC_WWDT->FEED = 0x50;    
-      while(1);   
-    }
   }
-  UARTCount1 = 0;
+  // TX normal answer
+  else if((mode == MODE_NORMAL &&                       // normal mode
+          (UARTBuffer1[1] == CMD_RUN_GET_LOADER_VER ||    // get boot version
+            UARTBuffer1[1] == CMD_RUN_GET_VERSION ||      // get version
+            UARTBuffer1[1] == CMD_RUN_GET_VOLTAGE ||      // get voltage
+            UARTBuffer1[1] == CMD_ZB2RS_RESET ||          // module reset
+            UARTBuffer1[1] == INTCOM_LORA_SET_SETTINGS || // set LoRa settings
+            UARTBuffer1[1] == INTCOM_LORA_GET_SETTINGS || // get LoRa settings
+            UARTBuffer1[1] == INTCOM_LORA_SET_ID_BY_SN || // set LoRa ID
+            (UARTBuffer1[1] == INTCOM_CONV_GET_SN_BY_ID && UARTBuffer1[0] != 100) || // get LoRa SN
+            UARTBuffer1[1] == INTCOM_LORA_GET_RSSI)       // get LoRa RSSI
+         )) 
+  {
+    crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, number_TX_bytes1, CRC_NORMAL);
+    UARTBuffer1[number_TX_bytes1++] = crc_calc1 & 0xFF;
+    UARTBuffer1[number_TX_bytes1++] = crc_calc1 / 0x100;
+
+    if(transceiver == LORA){
+      int time1 = slaveCommandTimeout;
+      while(true) {
+        if(slaveCommandTimeout - time1 > 15)
+          break;
+    }
+
+    
+    if(LoRa_channel_received)
+      LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
+    else  
+      set_tx_flag((char *)UARTBuffer1, number_TX_bytes1);
+
+  }
+  else if(transceiver == XBEE){
+
+    xbLength = xbSendPacketPrepare((char *)UARTBuffer1, number_TX_bytes1);    
+    UART1Send( (uint8_t *)(&xbData[0]), xbLength);
+  }
+
+  UARTCount = 0;
+  number_TX_bytes1 = 0;
+
+  if (flags & (1 << reset_it)) {    
+    while (rxTimeout0 < 1000);    
+    #if (STORAGE_TYPE == STORAGE_FLASH)
+      flash_write(SYS_VARS_ADDR);                   //save parameters
+    #elif (STORAGE_TYPE == STORAGE_EEPROM)
+      eeprom_write(SYS_VARS_EE); 
+    #endif    
+    LPC_WWDT->FEED = 0xAA;            
+    LPC_WWDT->FEED = 0x50;    
+    while(1);   
+  }
+}
+UARTCount1 = 0;
 }
 
 short xBeeConf;
@@ -1888,7 +1527,7 @@ void modbus_cmd1_master() {
   if(UARTCount1 > 0) { //ZigBEE
 
     memcpy((char *)UARTBuffer2, (char *)UARTBuffer1, BUFSIZE);
-    UART2Send((uint8_t *)(UARTBuffer2), UARTCount1);
+    UARTSend((uint8_t *)(UARTBuffer2), UARTCount1);
 
   }
   else{
@@ -1947,7 +1586,7 @@ TX:
       UARTBuffer2[number_TX_bytes2++] = crc_calc2 & 0xFF;
       UARTBuffer2[number_TX_bytes2++] = crc_calc2 / 0x100;
     } 
-    UART2Send((uint8_t *)(UARTBuffer2), module.packetLength);
+    UARTSend((uint8_t *)(UARTBuffer2), module.packetLength);
   }
   UARTCount1 = 0;
   number_TX_bytes2 = 0;
@@ -2057,7 +1696,7 @@ void modbus_cmd2() {
       UARTBuffer2[number_TX_bytes2++] = crc_calc2 & 0xFF;
       UARTBuffer2[number_TX_bytes2++] = crc_calc2 / 0x100;
 
-      UART2Send((uint8_t *)(UARTBuffer2), number_TX_bytes2);
+      UARTSend((uint8_t *)(UARTBuffer2), number_TX_bytes2);
 
       UARTCount2 = 0;
       number_TX_bytes2 = 0;
@@ -2382,7 +2021,7 @@ void modbus_cmd2() {
     UARTBuffer2[number_TX_bytes2++] = crc_calc2 & 0xFF;
     UARTBuffer2[number_TX_bytes2++] = crc_calc2 / 0x100;
 
-    UART2Send((uint8_t *)(UARTBuffer2), number_TX_bytes2);
+    UARTSend((uint8_t *)(UARTBuffer2), number_TX_bytes2);
 
     UARTCount2 = 0;
     number_TX_bytes2 = 0;
@@ -2416,6 +2055,186 @@ void modbus_cmd3() {
 const char cmd2[] = {CMD_GET_STATUS, MCMD_R_All_PARAM, MCMD_R_boot_ver, MCMD_R_status, MCMD_R_events, MCMD_R_serial_numbers, MCMD_R_version};
 char cmdIdx = 0;
 
+uint8_t LoRa_info_response(uint8_t * UARTBuffer, uint8_t* number_TX_bytes){
+  uint8_t LoRa_Responded = 0;
+  if(!
+      (
+        (
+          ( UARTBuffer[0] == LoRa_id ||                    // slaveID or broadcast(0x0) for SN setting, set settings
+            UARTBuffer[0] == 0x00 ||
+            UARTBuffer[1] == INTCOM_LORA_SET_ID_BY_SN ||
+            UARTBuffer[1] == INTCOM_LORA_SET_SETTINGS ||
+            UARTBuffer[1] == INTCOM_LORA_GET_RSSI ||
+              (UARTBuffer[0] == 0xFF &&                    // broadcast(0xFF) for SN getting
+               UARTBuffer[1] == INTCOM_CONV_GET_SN_BY_ID
+              )
+          ) &&
+          transceiver == LORA                              // << LoRa condition
+        ) 
+        ||                              
+        (
+          (UARTBuffer[1] == CMD_RUN_GET_LOADER_VER ||
+           UARTBuffer[1] == CMD_RUN_GET_VERSION ||
+           UARTBuffer[1] == CMD_RUN_GET_VOLTAGE
+          )
+          && (transceiver == XBEE)                        // ZigBee condition
+        )
+      )
+    )
+  {                                  
+    return 0;
+  }
+    
+  mode = MODE_NORMAL;
+
+  switch (UARTBuffer[1]) {
+
+    case CMD_RUN_GET_LOADER_VER: {
+      unsigned short ver = getVersionB();
+      UARTBuffer[2] = MACK_OK;
+      UARTBuffer[3] = ver / 0x100;
+      UARTBuffer[4] = ver % 0x100;
+      *number_TX_bytes = 5;
+      LoRa_Responded = 1;
+      break;
+    }
+
+    case CMD_RUN_GET_VERSION: {
+      unsigned short ver = getVersion();
+      UARTBuffer[2] = MACK_OK;
+      UARTBuffer[3] = ver / 0x100;
+      UARTBuffer[4] = ver % 0x100;
+      *number_TX_bytes = 5;
+      LoRa_Responded = 1;
+      break;
+    }
+
+    case CMD_RUN_GET_VOLTAGE: {
+      float voltage = gpio_U();
+      *number_TX_bytes = mcmd_read_float(voltage, (char*)UARTBuffer);
+      LoRa_Responded = 1;
+      break;
+    }
+
+    case CMD_ZB2RS_RESET: { 
+      if (UARTBuffer[0] == LoRa_id || transceiver == XBEE) {
+        flags |= (1 << reset_it);   
+        reset_status = RESET_MANUAL;
+        UARTBuffer[2] = MACK_OK;
+        *number_TX_bytes = 3;
+        LoRa_Responded = 1;
+      }
+      break;    
+    }
+
+    case INTCOM_LORA_SET_SETTINGS: {
+      if(!(UARTBuffer[0] == 0x0 || UARTBuffer[0] == 0xFF || UARTBuffer[0] == slave_addr)) {
+        UARTCount0 = 0;
+        number_TX_bytes = 0;
+        return 0;
+      }
+
+      if(UARTBuffer[2] != 0xff) 
+        module.channel = UARTBuffer[2];
+      module.power = UARTBuffer[3] & 0x03;
+      module.spFactor = (UARTBuffer[3] & 0xf0) >> 4;
+      module.LoRa_BW =  UARTBuffer[4]; 
+      eeprom_write(SYS_VARS_EE); 
+
+      if(UARTBuffer[3] & 0x04){
+        LoRa_channel_received = 1;
+        UARTBuffer[2] = LoRa_get_rssi();
+        *number_TX_bytes = 3;
+        LoRa_Responded = 1;                                  
+      }
+
+      LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
+      //timeout_master_check = 400000;
+      if(UARTBuffer[0] < 0xff){
+        UARTBuffer[2] = MACK_OK;
+        *number_TX_bytes = 3;
+        LoRa_Responded = 1;                   
+      }
+      break;
+    }
+
+    case INTCOM_LORA_SET_ID_BY_SN: { 
+      int SNrx[4];  
+      int updateSuccess = 0;
+
+      if(UARTBuffer[0] == slave_addr){
+        LoRa_id = UARTBuffer[18];
+        updateSuccess = 1;
+        //UARTBuffer[2] = MACK_OK;
+      }else/* if(UARTBuffer[0] == 0xff || UARTBuffer[0] == 0x00)*/{
+
+        SNrx[0]  = UARTBuffer[2] << 24;
+        SNrx[0] |= UARTBuffer[3] << 16;
+        SNrx[0] |= UARTBuffer[4] << 8;
+        SNrx[0] |= UARTBuffer[5];
+
+        SNrx[1]  = UARTBuffer[6] << 24;
+        SNrx[1] |= UARTBuffer[7] << 16;
+        SNrx[1] |= UARTBuffer[8] << 8;
+        SNrx[1] |= UARTBuffer[9];
+
+        SNrx[2]  = UARTBuffer[10] << 24;
+        SNrx[2] |= UARTBuffer[11] << 16;
+        SNrx[2] |= UARTBuffer[12] << 8;
+        SNrx[2] |= UARTBuffer[13];
+
+        SNrx[3]  = UARTBuffer[14] << 24;
+        SNrx[3] |= UARTBuffer[15] << 16;
+        SNrx[3] |= UARTBuffer[16] << 8;
+        SNrx[3] |= UARTBuffer[17];
+
+        if(SNrx[0] == SN[0] && SNrx[1] == SN[1] && SNrx[2] == SN[2] && SNrx[3] == SN[3]){
+          LoRa_id = UARTBuffer[18];
+          updateSuccess = 1;
+        }
+      }
+
+
+      if(updateSuccess){
+        // save data
+        eeprom_write(SYS_VARS_EE); 
+
+        read_int_buf[0] = (available_positioners[0] << 24) | (available_positioners[1] << 16) | (available_positioners[2] << 8) | available_positioners[3] ;
+        read_int_buf[2] = (available_positioners[4] << 24) | (available_positioners[5] << 16) | (available_positioners[6] << 8) | available_positioners[7] ;
+
+        *number_TX_bytes = mcmd_read_int(2, slave_addr);
+        LoRa_Responded = 1;
+      }else{
+        UARTCount0  = 0;
+        number_TX_bytes = 0;
+        return 0;
+      }
+      break;
+    }
+
+    case INTCOM_CONV_GET_SN_BY_ID: {
+        read_int_buf[0] = SN[0];
+        read_int_buf[1] = SN[1];
+        read_int_buf[2] = SN[2];
+        read_int_buf[3] = SN[3];
+
+        *number_TX_bytes = mcmd_read_int(4, LoRa_id); 
+        LoRa_Responded = 1;
+        break;
+    }
+
+    case INTCOM_LORA_GET_RSSI: {    
+        if(UARTBuffer[0] == LoRa_id){   
+          UARTBuffer[2] = LoRa_get_rssi();
+          *number_TX_bytes = 3;
+          LoRa_Responded = 1;
+        }
+        break;
+    }
+  }
+  return LoRa_Responded;
+}
+
 /*void modbus_cmd_next2() {
   cmdIdx++;
   if(cmdIdx >= sizeof(cmd2))
@@ -2429,7 +2248,7 @@ void modbus_cmd_data2() {
   UARTBuffer2[2] = crc_calc2 & 0xFF;
   UARTBuffer2[3] = crc_calc2 / 0x100;
   number_TX_bytes2 = 4;
-  UART2Send((uint8_t *)UARTBuffer2, number_TX_bytes2);
+  UARTSend((uint8_t *)UARTBuffer2, number_TX_bytes2);
   number_TX_bytes2 = 0;
   modbus_cmd_next2();
 }*/
@@ -2474,10 +2293,10 @@ unsigned int modbus_crc(uint8_t *UARTBuff, int length, unsigned int crc_calc) {
 unsigned int mcmd_write_int1() {
   unsigned int temp; 
 
-  temp = UARTBuffer[5];
-  temp += UARTBuffer[4] * 0x100;
-  temp += UARTBuffer[3] * 0x10000;
-  temp += UARTBuffer[2] * 0x1000000;
+  temp = UARTBuffer0[5];
+  temp += UARTBuffer0[4] * 0x100;
+  temp += UARTBuffer0[3] * 0x10000;
+  temp += UARTBuffer0[2] * 0x1000000;
 
   return temp;
 }
@@ -2497,25 +2316,22 @@ unsigned int mcmd_read_float(float param, char *pchData) {      //float
   return 6;
 }
 
-void mcmd_read_int(unsigned int num_int, uint8_t addr) { 		//vec int stevil "num_int" * 0x00000000
+
+unsigned int mcmd_read_int(unsigned int num_int, uint8_t addr) { 		//vec int stevil "num_int" * 0x00000000
   unsigned int i = 0, j = 2;
 
-  UARTBuffer[0] = addr; 
-  UARTBuffer[1] &= ~(1<<7);
+  UARTBuffer0[0] = addr; 
+  UARTBuffer0[1] &= ~(1<<7);
 
   do {
-    UARTBuffer[j++] = read_int_buf[i] / 0x1000000;
-    UARTBuffer[j++] = (read_int_buf[i] / 0x10000) & 0xFF;
-    UARTBuffer[j++] = (read_int_buf[i] / 0x100) & 0xFF;
-    UARTBuffer[j++] = (read_int_buf[i]) & 0xFF;
+    UARTBuffer0[j++] = read_int_buf[i] / 0x1000000;
+    UARTBuffer0[j++] = (read_int_buf[i] / 0x10000) & 0xFF;
+    UARTBuffer0[j++] = (read_int_buf[i] / 0x100) & 0xFF;
+    UARTBuffer0[j++] = (read_int_buf[i]) & 0xFF;
     num_int--;
     i++;
   } while (num_int != 0);
-
-  crc_calc = modbus_crc((uint8_t *)UARTBuffer, j, CRC_NORMAL);
-  UARTBuffer[j++] = crc_calc & 0xFF;
-  UARTBuffer[j++] = crc_calc / 0x100;
-  number_TX_bytes = j;
+  return j;
 }
 
 
@@ -2523,10 +2339,10 @@ void mcmd_read_int(unsigned int num_int, uint8_t addr) { 		//vec int stevil "num
 unsigned int mcmd_write_int(unsigned int dn_limit,unsigned int up_limit) {	  //eno int stevilo 0x00000000
   unsigned int temp; 
 
-  temp = UARTBuffer[5];
-  temp += UARTBuffer[4] * 0x100;
-  temp += UARTBuffer[3] * 0x10000;
-  temp += UARTBuffer[2] * 0x1000000;
+  temp = UARTBuffer0[5];
+  temp += UARTBuffer0[4] * 0x100;
+  temp += UARTBuffer0[3] * 0x10000;
+  temp += UARTBuffer0[2] * 0x1000000;
 
   if ((temp <= up_limit) && (temp >= dn_limit)) 
     ack_valUI_reply(temp);
@@ -2536,25 +2352,24 @@ unsigned int mcmd_write_int(unsigned int dn_limit,unsigned int up_limit) {	  //e
   }
   return temp;
 }
+
 void ack_reply() {
 
-  UARTBuffer[0] = slave_addr; 
-  UARTBuffer[1] &=~ (1 << 7);
-  UARTBuffer[2] = MACK_OK;
-  crc_calc = modbus_crc((uint8_t *)UARTBuffer, 3, CRC_NORMAL);
-  UARTBuffer[3] = crc_calc & 0xFF;
-  UARTBuffer[4] = crc_calc / 0x100;
-  number_TX_bytes = 5;
+  UARTBuffer0[0] = slave_addr; 
+  UARTBuffer0[1] &=~ (1 << 7);
+  UARTBuffer0[2] = MACK_OK;
+  number_TX_bytes0 = 3;
 }
+
 float mcmd_write_float1(){ 		//float
   float abc [1];				   							//kazalec deluje samo na array - ne vem zakaj???
   unsigned int *p = (unsigned int *)abc;                   
   unsigned int temp;
 
-  temp = UARTBuffer[5];
-  temp += UARTBuffer[4] * 0x100;
-  temp += UARTBuffer[3] * 0x10000;
-  temp += UARTBuffer[2] * 0x1000000;
+  temp = UARTBuffer0[5];
+  temp += UARTBuffer0[4] * 0x100;
+  temp += UARTBuffer0[3] * 0x10000;
+  temp += UARTBuffer0[2] * 0x1000000;
   *p=temp;	
 
   return abc[0];
@@ -2566,10 +2381,10 @@ float mcmd_write_float(float dn_limit,float up_limit){ 		//float
   unsigned int *p = (unsigned int *)abc;                   
   unsigned int temp;
 
-  temp = UARTBuffer[5];
-  temp += UARTBuffer[4] * 0x100;
-  temp += UARTBuffer[3] * 0x10000;
-  temp += UARTBuffer[2] * 0x1000000;
+  temp = UARTBuffer0[5];
+  temp += UARTBuffer0[4] * 0x100;
+  temp += UARTBuffer0[3] * 0x10000;
+  temp += UARTBuffer0[2] * 0x1000000;
   *p = temp;	
 
   if ((abc[0] <= up_limit) && (abc[0] >= dn_limit)) 
@@ -2586,10 +2401,10 @@ float mcmd_write_limit_float(float dn_limit,float up_limit,float offset){ 		//fl
   unsigned int *p = (unsigned int *)&val;                   
   unsigned int temp;
 
-  temp = UARTBuffer[5];
-  temp += UARTBuffer[4] * 0x100;
-  temp += UARTBuffer[3] * 0x10000;
-  temp += UARTBuffer[2] * 0x1000000;
+  temp = UARTBuffer0[5];
+  temp += UARTBuffer0[4] * 0x100;
+  temp += UARTBuffer0[3] * 0x10000;
+  temp += UARTBuffer0[2] * 0x1000000;
   *p = temp;	
 
   val += offset;
@@ -2611,48 +2426,39 @@ void ack_val_reply(float fVal) {
   abc[0]=fVal;
   temp=*p;
 
-  UARTBuffer[0] = slave_addr; 
-  UARTBuffer[1] &=~ (1<<7);
-  UARTBuffer[2] = MACK_OK;
+  UARTBuffer0[0] = slave_addr; 
+  UARTBuffer0[1] &=~ (1<<7);
+  UARTBuffer0[2] = MACK_OK;
 
-  UARTBuffer[3] = temp / 0x1000000;
-  UARTBuffer[4] = (temp / 0x10000) & 0xFF;
-  UARTBuffer[5] = (temp / 0x100) & 0xFF;
-  UARTBuffer[6] = (temp) & 0xFF;
+  UARTBuffer0[3] = temp / 0x1000000;
+  UARTBuffer0[4] = (temp / 0x10000) & 0xFF;
+  UARTBuffer0[5] = (temp / 0x100) & 0xFF;
+  UARTBuffer0[6] = (temp) & 0xFF;
 
-  crc_calc = modbus_crc((uint8_t*) UARTBuffer, 7, CRC_NORMAL);
-  UARTBuffer[7] = crc_calc & 0xFF;
-  UARTBuffer[8] = crc_calc / 0x100;
-  number_TX_bytes = 9;
+  number_TX_bytes0 = 7;
 }
 
 void ack_valUI_reply(unsigned int num_int) {
   unsigned int i = 0, j = 3;
 
-  UARTBuffer[0] = slave_addr; 
-  UARTBuffer[1] &=~ (1<<7);
-  UARTBuffer[2] = MACK_OK;
+  UARTBuffer0[0] = slave_addr; 
+  UARTBuffer0[1] &=~ (1<<7);
+  UARTBuffer0[2] = MACK_OK;
 
-  UARTBuffer[3] = num_int / 0x1000000;
-  UARTBuffer[4] = (num_int / 0x10000) & 0xFF;
-  UARTBuffer[5] = (num_int / 0x100) & 0xFF;
-  UARTBuffer[6] = (num_int) & 0xFF;
+  UARTBuffer0[3] = num_int / 0x1000000;
+  UARTBuffer0[4] = (num_int / 0x10000) & 0xFF;
+  UARTBuffer0[5] = (num_int / 0x100) & 0xFF;
+  UARTBuffer0[6] = (num_int) & 0xFF;
 
-  crc_calc = modbus_crc((uint8_t*) UARTBuffer, 7, CRC_NORMAL);
-  UARTBuffer[7] = crc_calc & 0xFF;
-  UARTBuffer[8] = crc_calc / 0x100;
-  number_TX_bytes = 9;
+  number_TX_bytes0 = 7;
 }
 
 void err_reply() {
 
-  UARTBuffer[0] = slave_addr; 
-  UARTBuffer[1] |=(1<<7);
-  UARTBuffer[2] = m_ack_state;
-  crc_calc = modbus_crc((uint8_t*)UARTBuffer, 3, CRC_NORMAL);
-  UARTBuffer[3] = crc_calc&0xFF;
-  UARTBuffer[4] = crc_calc/0x100;
-  number_TX_bytes=5;
+  UARTBuffer0[0] = slave_addr; 
+  UARTBuffer0[1] |=(1<<7);
+  UARTBuffer0[2] = m_ack_state;
+  number_TX_bytes0=3;
 }
 
 // prepare packet for sending via xBee    
@@ -2845,12 +2651,6 @@ uint8_t check_coexistance(int i, int n){
     i=MAX_SLAVE_ADDR;   
   }   
   return 1;   
-}
-
-void append_crc(void){
-    crc_calc2 = modbus_crc((uint8_t *)UARTBuffer, number_TX_bytes, CRC_NORMAL);
-    UARTBuffer[number_TX_bytes++] = crc_calc2 & 0xFF;
-    UARTBuffer[number_TX_bytes++] = crc_calc2 / 0x100;
 }
 
 void xbee_conCheck() {
