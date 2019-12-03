@@ -230,7 +230,7 @@ void modbus_cmd () {
         }
         // W SLAVE ADDRESS
         case MCMD_W_slave_addr: {  				 	
-          if((UARTBuffer0[2] > 0) && (UARTBuffer0[2] <= 64))
+          if((UARTBuffer0[2] > 0) && (UARTBuffer0[2] <= MAX_SLAVE_ADDR))
           {
             Utemp=UARTBuffer0[2];
             ack_reply();
@@ -2057,7 +2057,7 @@ void modbus_cmd3() {
 const char cmd2[] = {CMD_GET_STATUS, MCMD_R_All_PARAM, MCMD_R_boot_ver, MCMD_R_status, MCMD_R_events, MCMD_R_serial_numbers, MCMD_R_version};
 char cmdIdx = 0;
 
-uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
+uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){ //function for returning information of LoRa Slave unit
   LoRa_Responded = 0;
   if(!
       (
