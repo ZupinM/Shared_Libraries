@@ -1,0 +1,13 @@
+diff a/modbus.c b/modbus.c	(rejected hunks)
+@@ -41,9 +41,9 @@
+ extern uint8_t voltage_select_0;
+ extern uint8_t voltage_select_1;
+ extern float UVccHALL_0, UVccHALL_1;
+-#ifdef KVARK
++
+ extern MODE_TYPE mode;
+-#endif
++
+ unsigned int number_TX_bytes0;
+ unsigned int number_TX_bytes1;
+ unsigned int number_TX_bytes2;

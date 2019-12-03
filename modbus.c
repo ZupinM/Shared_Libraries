@@ -17,6 +17,7 @@
 #include "aes.h"
 #include "../main.h"
 #include "../eeprom.h"
+#include "uart.h"
 
 /////
 
@@ -41,9 +42,9 @@ extern float bldc_Current;
 extern uint8_t voltage_select_0;
 extern uint8_t voltage_select_1;
 extern float UVccHALL_0, UVccHALL_1;
-
+#ifdef KVARK
 extern MODE_TYPE mode;
-
+#endif
 unsigned int number_TX_bytes0;
 unsigned int number_TX_bytes1;
 unsigned int number_TX_bytes2;
@@ -118,7 +119,7 @@ uint8_t writePacket2[0x80];
 /***********************************************************
   MODBUS COMMANDS
 ************************************************************/
-
+#ifdef KVARK
 /***********************************************************
   RX from LORA (Sigma) for KVARK (this positioner)
 ************************************************************/
@@ -1276,7 +1277,7 @@ void modbus_cmd () {
   }
   LoRa_Responded = 0;
 }
-
+#endif
 
 unsigned int addrPrev = 0;
 // from Sigma to converter(slave) via ZigBee / LoRa
@@ -1428,6 +1429,7 @@ void modbus_cmd1() {
   }
   // normal mode processing
   else if(LoRa_info_response((uint8_t *)UARTBuffer1, &number_TX_bytes1)){
+    mode = MODE_NORMAL;
     goto TX;
   }
 
@@ -1672,10 +1674,10 @@ void modbus_cmd2() {
         UARTBuffer1[26] = slave_addr;
         UARTBuffer1[66] = LoRa_get_rssi();
 
-        number_TX_bytes2 = UARTCount2 - 2;
+        UARTCount2 -= 2;
         crc_calc2 = modbus_crc((uint8_t *)UARTBuffer1, number_TX_bytes2, CRC_NORMAL);
-        UARTBuffer1[number_TX_bytes2++] = crc_calc2 & 0xFF;
-        UARTBuffer1[number_TX_bytes2++] = crc_calc2 / 0x100;
+        UARTBuffer1[UARTCount2++] = crc_calc2 & 0xFF;
+        UARTBuffer1[UARTCount2++] = crc_calc2 / 0x100;
       }
 
       set_tx_flag((char *)UARTBuffer1, UARTCount2);
@@ -2087,7 +2089,6 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
     return 0;
   }
     
-  mode = MODE_NORMAL;
 
   switch (UARTBuffer[1]) {
 
