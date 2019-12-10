@@ -123,7 +123,7 @@ uint8_t writePacket2[0x80];
 /***********************************************************
   RX from LORA (Sigma) for KVARK (this positioner)
 ************************************************************/
-void modbus_cmd () {
+void modbus_cmd() {
 
   unsigned int rxcnt;
   unsigned int Utemp;
