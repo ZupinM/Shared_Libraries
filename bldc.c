@@ -378,6 +378,7 @@ void bldc_adcinit() {
   LPC_IOCON->PIO[I0_ADC_PORT][I0_ADC_PIN] &= ~(3<<3);   //disable I adc pullups
   #ifdef I1_ADC_PORT
   LPC_IOCON->PIO[I1_ADC_PORT][I1_ADC_PIN] &= ~(3<<3);
+  LPC_IOCON->PIO[FOCUS_H_PORT][FOCUS_H_PIN] &= ~(3<<3);
   #endif
 
   LPC_SWM->PINENABLE[0] = ~(0);
@@ -388,6 +389,8 @@ void bldc_adcinit() {
   LPC_SWM->PINENABLE[0] &= ~(1<<HALL_U_0_CHANNEL+HALL_U_0_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<HALL_U_1_CHANNEL+HALL_U_1_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<I1_ADC_CHANNEL+I1_ADC_GROUP*12);
+  LPC_SWM->PINENABLE[0] &= ~(1<<FOCUS_H_CHANNEL+FOCUS_H_GROUP*12);
+  LPC_SWM->PINENABLE[0] &= ~(1<<FOCUS_V_CHANNEL+FOCUS_V_GROUP*12);
 #endif
 
 //  ADC0 - Motor A
@@ -435,6 +438,8 @@ void bldc_adcinit() {
   LPC_ADC[HALL_U_0_GROUP]->SEQA_CTRL |= (1<<HALL_U_0_CHANNEL);
   LPC_ADC[HALL_U_1_GROUP]->SEQA_CTRL |= (1<<HALL_U_1_CHANNEL);
   LPC_ADC[I1_ADC_GROUP]->SEQA_CTRL |= (1<<I1_ADC_CHANNEL);
+  LPC_ADC[FOCUS_H_GROUP]->SEQA_CTRL |= (1<<FOCUS_H_CHANNEL);
+  LPC_ADC[FOCUS_V_GROUP]->SEQA_CTRL |= (1<<FOCUS_V_CHANNEL);
 #endif
 
   LPC_ADC0->SEQA_CTRL |= (1<<18) | (1<<31) | (1<<27); //Enable sequence A, TRIGPOL- rising edge
@@ -443,8 +448,8 @@ void bldc_adcinit() {
 
   for(int i=0 ; i<50 ; i++);
 
-  zeroCurrent_voltage_0 =  ((LPC_ADC0->DAT[5]>>4) & 0xfff) >> 2;
-  zeroCurrent_voltage_1 =  ((LPC_ADC1->DAT[2]>>4) & 0xfff) >> 2;
+  zeroCurrent_voltage_0 =  ((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+  zeroCurrent_voltage_1 =  ((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
 
 }
 
@@ -981,7 +986,7 @@ float bldc_I(unsigned char motor) {
   }
   #ifdef I1_ADC_CHANNEL
   if(!(bldc_motors[1].status & BLDC_STATUS_MOVING)){
-    zeroCurrent_voltage_0 +=  ((((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2) - zeroCurrent_voltage_0)*0.001;
+    zeroCurrent_voltage_1 +=  ((((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2) - zeroCurrent_voltage_1)*0.001;
   }
   #endif
 
@@ -998,12 +1003,13 @@ float bldc_I(unsigned char motor) {
 }
 
 void getFocus(void){
-	adc3_SUM += ((LPC_ADC1->DAT[11]>>4) &0xfff) >> 2;
-	adc4_SUM += ((LPC_ADC1->DAT[8] >>4) &0xfff) >> 2;
+	adc3_SUM += ((LPC_ADC[FOCUS_H_GROUP]->DAT[FOCUS_H_CHANNEL]>>4) &0xfff);
+	adc4_SUM += ((LPC_ADC[FOCUS_V_GROUP]->DAT[FOCUS_V_CHANNEL]>>4) &0xfff);
 
 	adc_CNT++;
-	if (adc_CNT > 500){
+	if (adc_CNT >= 500){
 		adc_CNT = 0;
+		adc3_VAL = adc3_SUM / 500;
 		adc3_VAL = adc3_SUM / 500;
 		adc4_VAL = adc4_SUM / 500;
 		adc3_SUM = 0;
