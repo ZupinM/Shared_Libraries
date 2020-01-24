@@ -98,7 +98,7 @@ void LoRa_TxPacket(uint8_t * txBuffer_, uint8_t length, uint32_t timeout) {
   LoRa_SPIWrite(LR_RegOpMode, tmp, 1); //Tx Mode
   LPC_PINT->IENR |= 1<<0; 
 
-  //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , txBuffer[0], txBuffer[1], txBuffer[30], txBuffer[31], txBuffer[32], txBuffer[33], txBuffer[34], txBuffer[35], txBuffer[8], txBuffer[9], txBuffer[10]);
+  //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , txBuffer[0], txBuffer[1], txBuffer[2], txBuffer[3], txBuffer[4], txBuffer[5], txBuffer[6], txBuffer[7], txBuffer[8], txBuffer[9], txBuffer[10]);
 
   return ;
 

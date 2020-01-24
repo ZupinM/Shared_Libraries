@@ -1782,6 +1782,7 @@ void modbus_cmd2() {
           }
           case CMD_RUN_GET_VOLTAGE: {
             float voltage = gpio_U();
+            LoRa_Responded = 1;
             number_TX_bytes2 = mcmd_read_float(voltage, (char *)UARTBuffer2);
             goto TX;
             break;
@@ -2114,8 +2115,8 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
 
     case CMD_RUN_GET_VOLTAGE: {
       float voltage = gpio_U();
-      *number_TX_bytes = mcmd_read_float(voltage, (char*)UARTBuffer);
       LoRa_Responded = 1;
+      *number_TX_bytes = mcmd_read_float(voltage, (char*)UARTBuffer);
       break;
     }
 
@@ -2204,9 +2205,8 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
 
         read_int_buf[0] = (available_positioners[0] << 24) | (available_positioners[1] << 16) | (available_positioners[2] << 8) | available_positioners[3] ;
         read_int_buf[2] = (available_positioners[4] << 24) | (available_positioners[5] << 16) | (available_positioners[6] << 8) | available_positioners[7] ;
-
-        *number_TX_bytes = mcmd_read_int(2, slave_addr);
         LoRa_Responded = 1;
+        *number_TX_bytes = mcmd_read_int(2, slave_addr);
       }else{
         UARTCount0  = 0;
         number_TX_bytes = 0;
@@ -2221,8 +2221,8 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
         read_int_buf[2] = SN[2];
         read_int_buf[3] = SN[3];
 
-        *number_TX_bytes = mcmd_read_int(4, LoRa_id); 
         LoRa_Responded = 1;
+        *number_TX_bytes = mcmd_read_int(4, LoRa_id); 
         break;
     }
 
