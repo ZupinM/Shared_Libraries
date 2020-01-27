@@ -96,7 +96,6 @@ extern unsigned int reset_status;
 extern volatile unsigned int start_count;
 
 volatile int slaveCommandTimeout;
-volatile int slaveCommandTimeout;
 unsigned int xbLength;
 char xbData[BUFSIZE];
 unsigned int xbSendPacketPrepare(char *pchData, unsigned int uiLength);

@@ -615,7 +615,7 @@ void bldc_init(int LoadDefaults){
   LPC_SCT2->EV0_STATE = 0xffffffff;    //state mask for all states
   LPC_SCT2->EV0_CTRL = (1 << 12); // match 0 condition only
   LPC_SWM->PINASSIGN[8] &= ~(0xFF << 24);
-  LPC_SWM->PINASSIGN[8] |= ((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24);        // PIO1_25 - CHARGE PUMP
+  //LPC_SWM->PINASSIGN[8] |= ((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24);        // PIO1_25 - CHARGE PUMP
 
   LPC_SCT2->CTRL &= ~(1 << 2); // unhalt SCT2 by clearing bit 2 of the CTRL
   LPC_SCT0->CTRL &= ~(1 << 2); // unhalt SCT0 by clearing bit 2 of the CTRL
@@ -642,6 +642,16 @@ void bldc_Lock(int state) {
     bldc_status |= BLDC_LOCKED;
   else
     bldc_status &= ~BLDC_LOCKED;
+}
+
+void Enable_ChargePump(uint8_t state){
+  if(state == 1){
+    LPC_SCT2->CTRL &= ~(1 << 2);                                            // unhalt SCT2 by clearing bit 2 of the CTRL
+    LPC_SWM->PINASSIGN[8] |= ((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24); // assign ouptut pin
+  }else{
+    LPC_SCT2->CTRL |= (1 << 2);                                             // halt by setting bit 2 of the CTRL
+    LPC_SWM->PINASSIGN[8] &= ~((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24);// unassign output pin  
+  }
 }
 
 void bldc_Stop(int CancelManual){ //stop all motors
@@ -1305,12 +1315,14 @@ void ActivateDrivers(int dir) {
     if(dir != 0)
       return;
     bldc_SetDrivers(0,bldc_cm->index);  //stop
+    Enable_ChargePump(0);
     bldc_cm->status &= ~(BLDC_STATUS_ACTIVE | BLDC_STATUS_MANUAL | BLDC_STATUS_WIND_MODE);
 
   } else {        // only on 1.st entry --- next one is hall comutated
     if(dir == 0)   
       return;
-
+    
+    Enable_ChargePump(1);
     bldc_runtime = 0;
     bldc_pwm = 0;
     bldc_cm->status |= BLDC_STATUS_ACTIVE;
@@ -1697,9 +1709,13 @@ void bldc_process() {
   } 
 }
 
-
+int dbg_state;
 //commutation 
 void bldc_Comutate(unsigned char motor){
+
+        //debugigng output toggle
+    LPC_GPIO_PORT->B[1][24] ^= 1;
+
 
     bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
 
@@ -1718,6 +1734,12 @@ void bldc_Comutate(unsigned char motor){
     LPC_SCT1->CTRL |= (1 << 3); // clear count
 
     unsigned char state = bldc_ReadHall(motor); 
+
+    if(dbg_state == state || state == 0 || state > 6){
+      //LPC_GPIO_PORT->B[1][17] ^= 1;
+      for(volatile int i = 0 ; i<1000; i++);
+    }
+    dbg_state = state;
 
     if(state > 0 && state < 7)
       hall_detect++;
@@ -1775,6 +1797,9 @@ void bldc_Comutate(unsigned char motor){
     }else bldc_Speed = 0;
     
     bldc_motors[motor].hall_state = state;//save state
+
+    //NVIC->ICPR[0] = 0xffff;
+    LPC_GPIO_PORT->B[1][17] ^= 1;
 }
 
 
@@ -1795,17 +1820,26 @@ void PIN_INT4_IRQHandler() {
 }  
 
 void PIN_INT5_IRQHandler() {
+  NVIC_DisableIRQ(PIN_INT5_IRQn);
   bldc_Comutate(1);
-  LPC_PINT->IST = 1<<5; //clear edge interrupt
+  LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
+  NVIC_EnableIRQ(PIN_INT7_IRQn);
+  NVIC_EnableIRQ(PIN_INT6_IRQn);
 }  
 
 void PIN_INT6_IRQHandler() {
+  NVIC_DisableIRQ(PIN_INT6_IRQn);
   bldc_Comutate(1);
-  LPC_PINT->IST = 1<<6; //clear edge interrupt
+  LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
+  NVIC_EnableIRQ(PIN_INT5_IRQn);
+  NVIC_EnableIRQ(PIN_INT7_IRQn);
 }  
 
 void PIN_INT7_IRQHandler() {
+  NVIC_DisableIRQ(PIN_INT7_IRQn);
   bldc_Comutate(1);
-  LPC_PINT->IST = 1<<7; //clear edge interrupt
+  LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
+  NVIC_EnableIRQ(PIN_INT5_IRQn);
+  NVIC_EnableIRQ(PIN_INT6_IRQn);
 }  
 
