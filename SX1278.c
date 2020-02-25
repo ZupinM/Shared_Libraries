@@ -374,23 +374,24 @@ void LoRa_Bind_Mode(uint8_t mode) {
 
   }
 
-  if(mode == MASTER_BY_CHANNEL){
+  if(mode == MASTER_BY_CHANNEL){ //binding with the same channel
     LoRa_bindMode_master = 1;
     LoRa_bindMode_slave = 0;
     set_LED(BLUE, 1, 0);
     LoRa_config(module.channel, LoRa_POWER_20DBM, LoRa_SF_10, LoRa_BW_62_5KHZ, LoRa_MAX_PACKET, RxMode);    
   }
- else if (mode == MASTER) {
+  else if (mode == MASTER) { // binding with channel 0
     LoRa_bindMode_master = 1;
     set_LED(BLUE, 1, 0);
     LoRa_config(0, LoRa_POWER_20DBM, LoRa_SF_10, LoRa_BW_62_5KHZ, LoRa_MAX_PACKET, RxMode);
-  } else if (mode == SLAVE) {
+  } 
+  else if (mode == SLAVE) {
     LoRa_bindMode_slave = 1;
     set_LED(BLUE, 0, 0);
     set_LED(GREEN, 1, 0);
     LoRa_config(0, LoRa_POWER_20DBM, LoRa_SF_10, LoRa_BW_62_5KHZ, LoRa_MAX_PACKET, RxMode);
-  }else if (mode == DISABLE) {
-    //for (volatile int i = 0; i < 5000000; i++);
+  }
+  else if (mode == DISABLE) { //exit binding mode on slave or master
     if (LoRa_bindMode_slave) {
       OriginalSettings.channel = module.channel;
       OriginalSettings.power = module.power;
@@ -399,7 +400,8 @@ void LoRa_Bind_Mode(uint8_t mode) {
       set_LED(BLUE, 1, 0);
       LoRa_bindMode_slave = 0;
       LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET, RxMode); //Set settings to slave
-    } else {
+    } 
+    else { //exit bindmode on master
       set_LED(BLUE, 0, 0);
       LoRa_bindMode_master = 0;
       LoRa_config(OriginalSettings.channel, OriginalSettings.power, OriginalSettings.spFactor, OriginalSettings.LoRa_BW, LoRa_MAX_PACKET, RxMode); //set settings to master
@@ -407,7 +409,7 @@ void LoRa_Bind_Mode(uint8_t mode) {
         memset(tx_settings_buffer, 0x00, 10);
       }
     }
-  }else if(mode == BY_CHANNEL){
+  }else if(mode == BY_CHANNEL){   //
     LoRa_bindMode_slave = 1;
     set_LED(BLUE, 0, 0);
     set_LED(GREEN, 1, 0);
