@@ -1495,9 +1495,7 @@ void modbus_cmd1() {
       LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
     else  
       set_tx_flag((char *)UARTBuffer1, number_TX_bytes1);
-       debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer1[0], UARTBuffer1[1], UARTBuffer1[2], UARTBuffer1[3], UARTBuffer1[4], UARTBuffer1[5], UARTBuffer1[6], UARTBuffer1[7], UARTBuffer1[8], UARTBuffer1[9], UARTBuffer1[10]);
-
-
+       //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer1[0], UARTBuffer1[1], UARTBuffer1[2], UARTBuffer1[3], UARTBuffer1[4], UARTBuffer1[5], UARTBuffer1[6], UARTBuffer1[7], UARTBuffer1[8], UARTBuffer1[9], UARTBuffer1[10]);
   }
   else if(transceiver == XBEE){
 
@@ -2336,10 +2334,17 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
         // save data
         eeprom_write(SYS_VARS_EE); 
 
-        read_int_buf[0] = (available_positioners[0] << 24) | (available_positioners[1] << 16) | (available_positioners[2] << 8) | available_positioners[3] ;
-        read_int_buf[2] = (available_positioners[4] << 24) | (available_positioners[5] << 16) | (available_positioners[6] << 8) | available_positioners[7] ;
-        LoRa_Responded = 1;
-        *number_TX_bytes = mcmd_read_int(2, slave_addr);
+        UARTBuffer[2] = available_positioners[0];
+        UARTBuffer[3] = available_positioners[1]; 
+        UARTBuffer[4] = available_positioners[2];
+        UARTBuffer[5] = available_positioners[3];
+        UARTBuffer[6] = available_positioners[4];
+        UARTBuffer[7] = available_positioners[5];
+        UARTBuffer[8] = available_positioners[6];
+        UARTBuffer[9] = available_positioners[7];   
+
+        *number_TX_bytes = 10;
+       LoRa_Responded = 1;
       }else{
         UARTCount0  = 0;
         number_TX_bytes = 0;
@@ -2349,13 +2354,28 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
     }
 
     case INTCOM_CONV_GET_SN_BY_ID: {
-        read_int_buf[0] = SN[0];
-        read_int_buf[1] = SN[1];
-        read_int_buf[2] = SN[2];
-        read_int_buf[3] = SN[3];
+        UARTBuffer[2] = (SN[0] >> 24) & 0xff;
+        UARTBuffer[3] = (SN[0] >> 16) & 0xff;
+        UARTBuffer[4] = (SN[0] >> 8)  & 0xff;  
+        UARTBuffer[5] =  SN[0]        & 0xff;  
 
+        UARTBuffer[6] = (SN[1] >> 24) & 0xff;
+        UARTBuffer[7] = (SN[1] >> 16) & 0xff;
+        UARTBuffer[8] = (SN[1] >> 8)  & 0xff;  
+        UARTBuffer[9] = SN[1]         & 0xff; 
+
+        UARTBuffer[10] = (SN[2] >> 24) & 0xff;
+        UARTBuffer[11] = (SN[2] >> 16) & 0xff;
+        UARTBuffer[12] = (SN[2] >> 8)  & 0xff;  
+        UARTBuffer[13] =  SN[2]        & 0xff; 
+
+        UARTBuffer[14] = (SN[3] >> 24) & 0xff;
+        UARTBuffer[15] = (SN[3] >> 16) & 0xff;
+        UARTBuffer[16] = (SN[3] >> 8)  & 0xff;  
+        UARTBuffer[17] =  SN[3]        & 0xff;
+
+        *number_TX_bytes = 18;
         LoRa_Responded = 1;
-        *number_TX_bytes = mcmd_read_int(4, LoRa_id); 
         break;
     }
 
