@@ -371,7 +371,7 @@ void modbus_cmd() {
         case MCMD_W_stop_motor: {					
           //stop_motor ();	
           RMeasure_Stop();                                                
-          bldc_manual(1);  // mzp
+          //bldc_manual(1);  // mzp
           bldc_Stop(1);
           bldc_runout(RUNOUT_ACTIVATE);
           store_in_flash = 100;

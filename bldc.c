@@ -907,7 +907,7 @@ float bldc_U(unsigned char measuring_point) {
     UVccHALL_0_avg = UVccHALL_0_avg + ( ((float)bldc_Voltage - UVccHALL_0_avg)*0.1);//integrator 
 
 
-    bldc_Voltage = ((LPC_ADC[HALL_U_0_GROUP]->DAT[HALL_U_1_CHANNEL]>>4) & 0xfff) >>  2; 
+    bldc_Voltage = ((LPC_ADC[HALL_U_1_GROUP]->DAT[HALL_U_1_CHANNEL]>>4) & 0xfff) >>  2; 
     UVccHALL_1_avg = UVccHALL_1_avg + ( ((float)bldc_Voltage - UVccHALL_1_avg)*0.1);//integrator 
 
   #endif
@@ -1079,14 +1079,16 @@ uint8_t ignore_setpoint = 0;
 
 void bldc_runout(int state){
 
-  if(state == RUNOUT_ACTIVATE){
+  if(state == RUNOUT_ACTIVATE){   //Activate free runout of motor
     ignore_setpoint = 1;   
   }
 
-  if(ignore_setpoint){
+  if(ignore_setpoint){                         //motor runing out (RUNOUT_FREEWHEEL)
     bldc_cm->target = bldc_cm->position;
     if(!(bldc_cm->status & BLDC_STATUS_MOVING)){
-      ignore_setpoint = 0;
+      ignore_setpoint = 0;                     //deactivate motor runout, once stopped
+      bldc_cm->ctrl   = BLDC_CTRL_IDLE;        //deactivate homing
+      ActivateDrivers(0);
     }
   }   
    
@@ -1247,11 +1249,11 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
     //activate pwm high side driver
     switch(NewState & 0xf0){
       case BLDC_PA_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_B_HI1 << 8) | 0xff; break;         // MB H1
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI1 <<  8) | 0xffff00ff; break;        // MB H1
       case BLDC_PB_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff; break;        // MB H2
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff00ffff; break;        // MB H2
       case BLDC_PC_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_B_HI3 << 24) | 0xff; break;        // MB H3
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI3 << 24) | 0x00ffffff; break;        // MB H3
      }
     //activate low side driver
     switch(NewState & 0x0f){
@@ -1278,11 +1280,11 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
     //activate pwm high side driver
     switch(NewState & 0xf0){
       case BLDC_PA_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_A_HI1 <<  8) | 0xff; break;       //  MA H1
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI1 <<  8) | 0xffff00ff; break;       //  MA H1
       case BLDC_PB_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_A_HI2 << 16) | 0xff; break;       //  MA H2
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI2 << 16) | 0xff00ffff; break;       //  MA H2
       case BLDC_PC_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_A_HI3 << 24) | 0xff; break;       //  MA H3
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI3 << 24) | 0x00ffffff; break;       //  MA H3
     }
     //activate low side driver
     switch(NewState & 0x0f){
@@ -1703,6 +1705,8 @@ void bldc_Comutate(unsigned char motor){
 
     bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
 
+    int raw_timer = LPC_SCT1->COUNT;
+
     //take sample of comutation speed
     if(!LPC_SCT1->EVFLAG & 1<<0){ //read speed only if timer not overflowed
       bldc_Speed_raw += LPC_SCT1->COUNT;
@@ -1716,6 +1720,7 @@ void bldc_Comutate(unsigned char motor){
     LPC_SCT1->EVFLAG |= 1 << 0;   // reset overflow flag
     LPC_SCT1->CTRL |= (1 << 2); // halt speed measurment timer
     LPC_SCT1->CTRL |= (1 << 3); // clear count
+      
 
     unsigned char state = bldc_ReadHall(motor); 
 
@@ -1739,8 +1744,6 @@ void bldc_Comutate(unsigned char motor){
         }
     }
 
-
-
     
     if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_HALL){ //Swap direct. of encoder count){//inverter 
         if      (bldc_ccw_next[bldc_motors[motor].hall_state][0] == state)  
@@ -1753,7 +1756,7 @@ void bldc_Comutate(unsigned char motor){
         else  if(bldc_cw_next [bldc_motors[motor].hall_state][0] == state)  
           bldc_motors[motor].position++;
     }
-    
+
     
     
     if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && !(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)){   
@@ -1775,6 +1778,7 @@ void bldc_Comutate(unsigned char motor){
     }else bldc_Speed = 0;
     
     bldc_motors[motor].hall_state = state;//save state
+
 }
 
 
