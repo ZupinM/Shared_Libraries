@@ -1247,6 +1247,8 @@ void modbus_cmd() {
             }
 
             set_tx_flag((char *)UARTBuffer0, number_TX_bytes0);
+            //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer0[0], UARTBuffer0[1], UARTBuffer0[2], UARTBuffer0[3], UARTBuffer0[4], UARTBuffer0[5], UARTBuffer0[6], UARTBuffer0[7], UARTBuffer0[8], UARTBuffer0[9], UARTBuffer0[10]);
+  
           }              
           else if (uartMode == UART_MODE_RS485) {
             UARTSend( (uint8_t *)UARTBuffer0, number_TX_bytes0);
@@ -1601,6 +1603,11 @@ volatile uint8_t UARTTest1[BUFSIZE];
 // from positioner via ZigBee / LoRa converter to sigma
 void modbus_cmd2() {
 
+#ifdef KVARK
+memcpy((char *)UARTBuffer2, (char *)UARTBuffer0, BUFSIZE);
+UARTCount2 = UARTCount0;
+#endif
+
   if(UARTCount2 > 0) {
     memcpy((char *)UARTBuffer1, (char *)UARTBuffer2, BUFSIZE);
 
@@ -1680,6 +1687,8 @@ void modbus_cmd2() {
       }
 
       set_tx_flag((char *)UARTBuffer1, UARTCount2);
+      //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer1[0], UARTBuffer1[1], UARTBuffer1[2], UARTBuffer1[3], UARTBuffer1[4], UARTBuffer1[5], UARTBuffer1[6], UARTBuffer1[7], UARTBuffer1[8], UARTBuffer1[9], UARTBuffer1[10]);
+  
     }
     else if(transceiver == XBEE){
 
