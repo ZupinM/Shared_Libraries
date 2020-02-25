@@ -1496,6 +1496,8 @@ void modbus_cmd1() {
       LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET,  RxMode); //Set settings to slave
     else  
       set_tx_flag((char *)UARTBuffer1, number_TX_bytes1);
+       debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer1[0], UARTBuffer1[1], UARTBuffer1[2], UARTBuffer1[3], UARTBuffer1[4], UARTBuffer1[5], UARTBuffer1[6], UARTBuffer1[7], UARTBuffer1[8], UARTBuffer1[9], UARTBuffer1[10]);
+
 
   }
   else if(transceiver == XBEE){
@@ -1732,7 +1734,16 @@ void modbus_cmd2() {
          (UARTBuffer2[1] == INTCOM_CONV_GET_SN_BY_ID && UARTBuffer2[0] == 100) || // get SN from master
          ((UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS ||
            UARTBuffer2[1] == INTCOM_LORA_GET_ROUTE || 
-           UARTBuffer2[1] == INTCOM_LORA_SET_ROUTE) &&
+             UARTBuffer2[1] == INTCOM_LORA_SET_ROUTE
+           
+           || UARTBuffer2[1] == INTCOM_LORA_GET_PARAMS  // Helios commands
+           || (UARTBuffer2[1] == MCMD_W_fromH && UARTBuffer2[2] == MCMD_W_sepH &&
+            (UARTBuffer2[3] == MCMD_W_LoRaChannelH || UARTBuffer2[3] == MCMD_W_LoRaTxPower
+             || UARTBuffer2[3] == MCMD_W_LoRaSF || UARTBuffer2[3] == MCMD_W_LoRaBW
+            )
+           )
+          
+          ) &&
          UARTBuffer2[0] < 0xff && crc_calc2 == 0) // normal mode, not for master configuration (specified ID)
          ) ||
        crc_calc2 != 0) {                                // NOT upgrade
@@ -1852,7 +1863,9 @@ void modbus_cmd2() {
           break;             
         }        
 
-        case INTCOM_LORA_SET_SETTINGS: {
+        case INTCOM_LORA_SET_SETTINGS:
+        case MCMD_W_fromH:
+        {
 
           if(LoRa_bindMode_master == 0){
             original.channel  = module.channel;
@@ -1861,14 +1874,69 @@ void modbus_cmd2() {
             original.LoRa_BW  = module.LoRa_BW;
           }
 
-          if(UARTBuffer2[2] != 0xff)
-            module.channel = UARTBuffer2[2];   //if not bind_by_channel
-          module.power = UARTBuffer2[3] & 0x03;  
-          module.spFactor = (UARTBuffer2[3] & 0xf0) >> 4;
-          module.LoRa_BW =  UARTBuffer2[4];
+          if (UARTBuffer2[1] == MCMD_W_fromH && UARTBuffer2[2] == MCMD_W_sepH) {
+            char cmd = UARTBuffer2[3];
 
-          
+            uint8_t ch = module.channel;
+            uint8_t pwr = module.power;
+            uint8_t sf = module.spFactor;
+            uint8_t bw = module.LoRa_BW;
 
+            switch (cmd) {
+              case MCMD_W_LoRaChannelH:
+              {
+                int j = 0;
+                ch = 0;
+                for(int i = UARTCount2 - 4; i >= 4; i--) {
+                  ch += (uint8_t)(UARTBuffer2[i] - 0x30) * (uint8_t)pow(10, j);
+                  j++;
+                }
+                module.channel = ch;
+                break;
+              }
+
+              case MCMD_W_LoRaTxPower:
+              {
+                pwr = UARTBuffer2[4] - 0x30;
+                module.power = pwr;
+                break;
+              }
+              
+              case MCMD_W_LoRaSF:
+              {
+                int j = 0;
+                sf = 0;
+                for(int i = UARTCount2 - 4; i >= 4; i--) {
+                  sf += (uint8_t)(UARTBuffer2[i] - 0x30) * (uint8_t)pow(10, j);
+                  j++;
+                }
+                module.spFactor = sf;
+                break;
+              }
+              case  MCMD_W_LoRaBW:
+              {
+                bw = UARTBuffer2[4] - 0x30;
+                module.LoRa_BW = bw;
+                break;
+              }
+            }
+
+            // for slaves
+            UARTBuffer2[0] = 0xFF;
+            UARTBuffer2[1] = INTCOM_LORA_SET_SETTINGS;
+            UARTBuffer2[2] = ch;
+            UARTBuffer2[3] = pwr + sf * 0x10;
+            UARTBuffer2[4] = module.LoRa_BW;
+          }
+          else if (UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS) {
+            if(UARTBuffer2[2] != 0xff)
+              module.channel = UARTBuffer2[2];   //if not bind_by_channel
+            module.power = UARTBuffer2[3] & 0x03;  
+            module.spFactor = (UARTBuffer2[3] & 0xf0) >> 4;
+            module.LoRa_BW =  UARTBuffer2[4];
+          }
+          else
+            break;
 
           if(UARTBuffer2[0] == 0xff){
             number_TX_bytes2 = 5;
@@ -1884,7 +1952,7 @@ void modbus_cmd2() {
           }
 
 
-          if(UARTBuffer2[3] & 0x04){ //Enter bindmode command
+          if(UARTBuffer2[3] & 0x04 && UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS){ //Enter bindmode command
             if(LoRa_bindMode_master == 0){
               if(UARTBuffer2[2] == 0xff)
                 LoRa_Bind_Mode(MASTER_BY_CHANNEL);  //binding with the same channel
@@ -1925,6 +1993,7 @@ void modbus_cmd2() {
             number_TX_bytes2 = 3;
             goto TX;
           }
+          break;
         }
 
         case INTCOM_LORA_GET_SETTINGS: {
@@ -1940,6 +2009,67 @@ void modbus_cmd2() {
           goto TX;
           break;
         }  
+
+          case INTCOM_LORA_GET_PARAMS: {
+          UARTBuffer2[2] = MCMD_W_sepH;  // sign separator: $
+          UARTBuffer2[3] = MCMD_R_LoRaData;   // Master SN
+          char buff[3];
+          sprintf(buff, "%.2x\0", (SN[0] >> 24) & 0xff);
+          UARTBuffer2[4] = buff[0];
+          UARTBuffer2[5] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[0] >> 16) & 0xff);
+          UARTBuffer2[6] = buff[0];
+          UARTBuffer2[7] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[0] >> 8) & 0xff);
+          UARTBuffer2[8] = buff[0];
+          UARTBuffer2[9] = buff[1];
+          sprintf(buff, "%.2x\0", SN[0] & 0xff);
+          UARTBuffer2[10] = buff[0];
+          UARTBuffer2[11] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[1] >> 24) & 0xff);
+          UARTBuffer2[12] = buff[0];
+          UARTBuffer2[13] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[1] >> 16) & 0xff);
+          UARTBuffer2[14] = buff[0];
+          UARTBuffer2[15] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[1] >> 8) & 0xff);
+          UARTBuffer2[16] = buff[0];
+          UARTBuffer2[17] = buff[1];
+          sprintf(buff, "%.2x\0", SN[1] & 0xff);
+          UARTBuffer2[18] = buff[0];
+          UARTBuffer2[19] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[2] >> 24) & 0xff);
+          UARTBuffer2[20] = buff[0];
+          UARTBuffer2[21] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[2] >> 16) & 0xff);
+          UARTBuffer2[22] = buff[0];
+          UARTBuffer2[23] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[2] >> 8) & 0xff);
+          UARTBuffer2[24] = buff[0];
+          UARTBuffer2[25] = buff[1];
+          sprintf(buff, "%.2x\0", SN[2] & 0xff);
+          UARTBuffer2[26] = buff[0];
+          UARTBuffer2[27] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[3] >> 24) & 0xff);
+          UARTBuffer2[28] = buff[0];
+          UARTBuffer2[29] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[3] >> 16) & 0xff);
+          UARTBuffer2[30] = buff[0];
+          UARTBuffer2[31] = buff[1];
+          sprintf(buff, "%.2x\0", (SN[3] >> 8) & 0xff);
+          UARTBuffer2[32] = buff[0];
+          UARTBuffer2[33] = buff[1];
+          sprintf(buff, "%.2x\0", SN[3] & 0xff);
+          UARTBuffer2[34] = buff[0];
+          UARTBuffer2[35] = buff[1];
+          number_TX_bytes2 = 36;
+          number_TX_bytes2 += sprintf((char *)&UARTBuffer2[number_TX_bytes2], "$%c%d", MCMD_W_LoRaChannelH, (int)module.channel);
+          number_TX_bytes2 += sprintf((char *)&UARTBuffer2[number_TX_bytes2], "$%c%d", MCMD_W_LoRaTxPower, (int)module.power);
+          number_TX_bytes2 += sprintf((char *)&UARTBuffer2[number_TX_bytes2], "$%c%d", MCMD_W_LoRaSF, (int)module.spFactor);
+          number_TX_bytes2 += sprintf((char *)&UARTBuffer2[number_TX_bytes2], "$%c%d", MCMD_W_LoRaBW, (int)module.LoRa_BW);
+          goto TX; 
+          break;
+        }
 
         case INTCOM_LORA_GET_SLAVES: {
           for(int i=0 ; i<8 ; i++){
@@ -1973,7 +2103,6 @@ void modbus_cmd2() {
             LoRa_route[destination_id] [i] = 0;                 //set converter routes to 0
             }
           for(int i = 0; i < MAX_ROUTE_HOPS ; i++) {
-            LoRa_route[(unsigned char)(UARTBuffer2[0])][i] = UARTBuffer2[i + 2]; // set positioner route
             LoRa_route[(unsigned char)(UARTBuffer2[0])][i] = UARTBuffer2[i + 2]; // set positioner route
             LoRa_route[destination_id ] [i] = UARTBuffer2[i + 2]; // set converter   route  
             if(destination_id == UARTBuffer2[i + 2]){
@@ -2020,7 +2149,11 @@ void modbus_cmd2() {
      UARTBuffer2[1] == INTCOM_LORA_GET_SLAVES || 
      UARTBuffer2[1] == INTCOM_LORA_GET_ROUTE || 
      UARTBuffer2[1] == INTCOM_LORA_SET_ROUTE ||
-     UARTBuffer2[1] == INTCOM_LORA_RESET_ROUTES) {
+     UARTBuffer2[1] == INTCOM_LORA_RESET_ROUTES
+     
+     || UARTBuffer2[1] == INTCOM_LORA_GET_PARAMS
+     
+    ) {
 
     crc_calc2 = modbus_crc((uint8_t *)UARTBuffer2, number_TX_bytes2, CRC_NORMAL);
     UARTBuffer2[number_TX_bytes2++] = crc_calc2 & 0xFF;
@@ -2078,11 +2211,12 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
         ) 
         ||                              
         (
-          (UARTBuffer[1] == CMD_RUN_GET_LOADER_VER ||
-           UARTBuffer[1] == CMD_RUN_GET_VERSION ||
-           UARTBuffer[1] == CMD_RUN_GET_VOLTAGE
-          )
-          && (transceiver == XBEE)                        // ZigBee condition
+          //(UARTBuffer[1] == CMD_RUN_GET_LOADER_VER ||
+          //UARTBuffer[1] == CMD_RUN_GET_VERSION ||
+          //UARTBuffer[1] == CMD_RUN_GET_VOLTAGE
+          //)
+          //&& 
+          (transceiver == XBEE)                        // ZigBee condition
         )
       )
     )

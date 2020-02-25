@@ -83,6 +83,16 @@
 #define MCMD_R_errorA_stats                     0x2B
 #define MCMD_R_errorB_stats                     0x2C
 
+// HELIOS commands
+#define INTCOM_LORA_GET_PARAMS      0x19
+#define MCMD_W_fromH                0x20
+#define MCMD_W_sepH                 0x24  // $ separator
+#define MCMD_R_LoRaData             0xC3
+#define MCMD_W_LoRaChannelH         0xC4
+#define MCMD_W_LoRaTxPower          0xC5
+#define MCMD_W_LoRaSF               0xC6
+#define MCMD_W_LoRaBW               0xC7
+
 //commands
 #define MCMD_W_stop_motor			0x30	//48	//stop motors immediatelly
 #define MCMD_R_position_A			0x31	//49	//read currently position (impulses)
