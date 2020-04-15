@@ -42,7 +42,7 @@ extern float bldc_Current;
 extern uint8_t voltage_select_0;
 extern uint8_t voltage_select_1;
 extern float UVccHALL_0, UVccHALL_1;
-#ifdef KVARK
+#if (DEVICE == KVARK)
 extern MODE_TYPE mode;
 #endif
 unsigned int number_TX_bytes0;
@@ -118,7 +118,7 @@ uint8_t writePacket2[0x80];
 /***********************************************************
   MODBUS COMMANDS
 ************************************************************/
-#ifdef KVARK
+#if (DEVICE == KVARK)
 /***********************************************************
   RX from LORA (Sigma) for KVARK (this positioner)
 ************************************************************/
@@ -1603,7 +1603,7 @@ volatile uint8_t UARTTest1[BUFSIZE];
 // from positioner via ZigBee / LoRa converter to sigma
 void modbus_cmd2() {
 
-#ifdef KVARK
+#if (DEVICE == KVARK)
 memcpy((char *)UARTBuffer2, (char *)UARTBuffer0, BUFSIZE);
 UARTCount2 = UARTCount0;
 #endif
@@ -1681,14 +1681,14 @@ UARTCount2 = UARTCount0;
         UARTBuffer1[66] = LoRa_get_rssi();
 
         UARTCount2 -= 2;
-        crc_calc2 = modbus_crc((uint8_t *)UARTBuffer1, number_TX_bytes2, CRC_NORMAL);
+        crc_calc2 = modbus_crc((uint8_t *)UARTBuffer1, UARTCount2, CRC_NORMAL);
         UARTBuffer1[UARTCount2++] = crc_calc2 & 0xFF;
         UARTBuffer1[UARTCount2++] = crc_calc2 / 0x100;
       }
 
       set_tx_flag((char *)UARTBuffer1, UARTCount2);
-      //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer1[0], UARTBuffer1[1], UARTBuffer1[2], UARTBuffer1[3], UARTBuffer1[4], UARTBuffer1[5], UARTBuffer1[6], UARTBuffer1[7], UARTBuffer1[8], UARTBuffer1[9], UARTBuffer1[10]);
-  
+//      debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x" , UARTBuffer1[0], UARTBuffer1[1], UARTBuffer1[2], UARTBuffer1[3], UARTBuffer1[4], UARTBuffer1[5], UARTBuffer1[6], UARTBuffer1[7], UARTBuffer1[8], UARTBuffer1[9], UARTBuffer1[10]);
+//      debug_printf("%u \n" , UARTCount2);
     }
     else if(transceiver == XBEE){
 
