@@ -102,6 +102,8 @@ extern float flash_backup[0x100];
 //#define SF_ENDSW_B_LO_PRESSED		21		//end switch pressed B - LO
 #define SF_MOT_A_LOSING_HAL		22		//end switch pressed B - HI
 #define SF_MOT_B_LOSING_HAL             23
+#define ERR_TO_DST_A                    28
+#define ERR_TO_DST_B                    31
 ////#define SF_ENDSW_B_HI_PRESSED           24
 //
 //

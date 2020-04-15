@@ -187,8 +187,14 @@
 
 #define cbldc_Speed        204
 #define cnumber_of_poles   205
-
-
+#define cpid_pA            206
+#define cpid_iA            207
+#define cpid_dA            208
+#define cpid_pB            209
+#define cpid_iB            210
+#define cpid_dB            211
+#define cdeadbandA         212
+#define cdeadbandB         213
 
 
 

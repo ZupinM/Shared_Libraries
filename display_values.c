@@ -574,6 +574,15 @@ void USB_display(void) {
     if(screen_mux_B==26){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbldc_Speed, bldc_Speed);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cnumber_of_poles, number_of_poles);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_pA, bldc_Motor(0)->pid.pgain);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.6f", cpid_iA, bldc_Motor(0)->pid.igain);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_dA, bldc_Motor(0)->pid.dgain);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_pB, bldc_Motor(1)->pid.pgain);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.6f", cpid_iB, bldc_Motor(1)->pid.igain);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_dB, bldc_Motor(1)->pid.dgain);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cdeadbandA, bldc_Motor(0)->pid.deadband);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cdeadbandB, bldc_Motor(1)->pid.deadband);
+
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
       screen_mux_B = 0;
     }

@@ -109,6 +109,22 @@
 #define MCMD_R_NPoles             0x94		
 #define MCMD_W_NPoles             0x95
 
+// BLDC motor parameters
+#define MCMD_W_Bldc_PA         0xC0
+#define MCMD_R_Bldc_PA         0xC1
+#define MCMD_W_Bldc_IA         0xC2
+#define MCMD_R_Bldc_IA         0xC3
+#define MCMD_W_Bldc_DA         0xC4
+#define MCMD_R_Bldc_DA         0xC5
+#define MCMD_W_Bldc_PB         0xC6
+#define MCMD_R_Bldc_PB         0xC7
+#define MCMD_W_Bldc_IB         0xC8
+#define MCMD_R_Bldc_IB         0xC9
+#define MCMD_W_Bldc_DB         0xCA
+#define MCMD_R_Bldc_DB         0xCB
+#define MCMD_W_Bldc_Deadband   0xCC
+#define MCMD_R_Bldc_Deadband   0xCD
+
 #define MCMD_W_Detection_I_A			0x80
 #define MCMD_R_Detection_I_A			0x81
 #define MCMD_W_Detection_I_B			0x82
