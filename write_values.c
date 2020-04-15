@@ -227,6 +227,40 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
       break;
     }
 
+    case cpid_pA: {
+      bldc_Motor(0)->pid.pgain = FloatTemp;
+      break;
+    }
+    case cpid_iA: {
+      bldc_Motor(0)->pid.igain = FloatTemp;
+      break;
+    }
+    case cpid_dA: {
+      bldc_Motor(0)->pid.dgain = FloatTemp;
+      break;
+    }
+    case cpid_pB: {
+      bldc_Motor(1)->pid.pgain = FloatTemp;
+      break;
+    }
+    case cpid_iB: {
+      bldc_Motor(1)->pid.igain = FloatTemp;
+      break;
+    }
+    case cpid_dB: {
+      bldc_Motor(1)->pid.dgain = FloatTemp;
+      break;
+    }
+
+    case cdeadbandA: {
+      bldc_Motor(0)->pid.deadband = IntTemp;
+      break;
+    }
+    case cdeadbandB: {
+      bldc_Motor(1)->pid.deadband = IntTemp;
+      break;
+    }
+
     case cshow_angle_A: {       //ANGLE OF A AXIS
         if (!(bflags&(1<<time_enable))){
             bldc_manual(0);

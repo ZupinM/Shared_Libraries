@@ -295,7 +295,109 @@ void modbus_cmd() {
           }			 
           break;	
         }
+        case MCMD_R_Bldc_PA: {		
+          mcmd_read_float(bldc_Motor(0)->pid.pgain);
+          break;		
+        }
+        case MCMD_R_Bldc_IA: {		
+          mcmd_read_float(bldc_Motor(0)->pid.igain);
+          break;		
+        }
+        case MCMD_R_Bldc_DA: {		
+          mcmd_read_float(bldc_Motor(0)->pid.dgain);
+          break;		
+        }
+        case MCMD_W_Bldc_PA: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(0)->pid.pgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_IA: {
+          Ftemp = mcmd_write_limit_float (0.000001, 1.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(0)->pid.igain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_DA: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(0)->pid.dgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+
+        case MCMD_R_Bldc_PB: {		
+          mcmd_read_float(bldc_Motor(1)->pid.pgain);
+          break;		
+        }
+        case MCMD_R_Bldc_IB: {		
+          mcmd_read_float(bldc_Motor(1)->pid.igain);
+          break;		
+        }
+        case MCMD_R_Bldc_DB: {		
+          mcmd_read_float(bldc_Motor(1)->pid.dgain);
+          break;		
+        }
+        case MCMD_W_Bldc_PB: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(1)->pid.pgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_IB: {
+          Ftemp = mcmd_write_limit_float (0.000001, 1.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(1)->pid.igain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_DB: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(1)->pid.dgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+
+        case MCMD_R_Bldc_Deadband: {
+          read_int_buf[0] = bldc_Motor(0)->pid.deadband | (bldc_Motor(1)->pid.deadband << 16);
+          mcmd_read_int(1, slave_addr);
+          break;
+        }
+        case MCMD_W_Bldc_Deadband: {
+
+          Utemp = mcmd_write_int1();
+          unsigned int dbA =  Utemp & 0xFFFF;
+          unsigned int dbB =  (Utemp >> 16) & 0xFFFF;
+
+          if (dbA <= 0)
+            dbA = 1;
+          if (dbB <= 0)
+            dbB = 1;
+
+          if (dbA <= 100 && dbB <= 100) {
+            bldc_Motor(0)->pid.deadband = dbA;
+            bldc_Motor(1)->pid.deadband = dbB;
+            eepromUpdate = 1;
+            ack_reply();
+          }
+          else
+            err_reply();
+
+          break;
+        }
            
+          mcmd_read_float(bldc_Motor(1)->pid.dgain);
         // SERIAL NUMBERS
         case MCMD_R_serial_numbers: {			   
           read_int_buf[0] = SN[0];
