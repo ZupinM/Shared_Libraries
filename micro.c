@@ -112,6 +112,7 @@ void check_time() {
 
     
    //****************FOCUS SENSOR PROCESSING****************** 
+#ifdef FOCUS_H_PORT
    //Seek State
     temp=0;
     if(last_seconds24 != (unsigned int)seconds24){//focus sensor correction
@@ -146,6 +147,7 @@ void check_time() {
 
     if((temp==0)&&(!force_recalc)) return;
     force_recalc = 0;
+#endif
     //*******************************************************
     
     ////////////////
@@ -271,6 +273,7 @@ void check_time() {
             
 //S
 // Odmik sledilnika od sonca v primeru previsoke temperature-senzor je na pb3
+#ifdef FOCUS_H_PORT
   if( Snow_Input() && (!(cflags&&(1<<SnowSensInUse))) ){  // 
     count_S = (signed int)Time_out_of_focus*3000;   // mnozi s 3000, da dobis zakasnitev v imp iz minut
   }
@@ -284,6 +287,7 @@ void check_time() {
     angle_A+=focus_angle_A();        //dodajanje offseta[deg]
     angle_B+=focus_angle_B();
   }                   
+#endif
 ///S 
             //---geometry selection---
             bldc_manual(0);

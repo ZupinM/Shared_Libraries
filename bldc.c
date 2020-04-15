@@ -1627,7 +1627,9 @@ void bldc_process() {
     bldc_cm->ctrl = BLDC_CTRL_IDLE;
     bldc_cm->home_remaining = bldc_cm->position;
     bldc_cm->position = bldc_cm->target = 0;
-    ActivateDrivers(0);
+     bldc_manual(1);
+    bldc_Stop(1);
+    bldc_runout(RUNOUT_ACTIVATE);
     return;
   }
 
@@ -1794,7 +1796,7 @@ void bldc_Comutate(unsigned char motor){
 
     
     
-    if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && !(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)){   
+    if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && (!(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)  ||  BLDC_MOTOR_COUNT == 1)){   
         moving_counter[motor] = 100;
         if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_DIRECTION){//Inverted operation
 

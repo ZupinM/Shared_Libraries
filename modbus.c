@@ -2837,3 +2837,12 @@ void xbee_conCheck() {
   xbData[7] = 0X69;
   UART1Send((uint8_t *)(&xbData[0]), 8);
 }
+
+int isOnlineDevice(unsigned int dev) {
+  int n = (dev - 1) / 8;
+
+  if((available_positioners[n] & (1 << (dev - n * 8 - 1))) == (1 << (dev - n * 8 - 1)))
+    return 1;
+
+  return 0;
+}
