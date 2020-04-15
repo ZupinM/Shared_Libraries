@@ -296,15 +296,15 @@ void modbus_cmd() {
           break;	
         }
         case MCMD_R_Bldc_PA: {		
-          mcmd_read_float(bldc_Motor(0)->pid.pgain);
+          mcmd_read_float(bldc_Motor(0)->pid.pgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_IA: {		
-          mcmd_read_float(bldc_Motor(0)->pid.igain);
+          mcmd_read_float(bldc_Motor(0)->pid.igain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_DA: {		
-          mcmd_read_float(bldc_Motor(0)->pid.dgain);
+          mcmd_read_float(bldc_Motor(0)->pid.dgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_W_Bldc_PA: {
@@ -333,15 +333,15 @@ void modbus_cmd() {
         }
 
         case MCMD_R_Bldc_PB: {		
-          mcmd_read_float(bldc_Motor(1)->pid.pgain);
+          mcmd_read_float(bldc_Motor(1)->pid.pgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_IB: {		
-          mcmd_read_float(bldc_Motor(1)->pid.igain);
+          mcmd_read_float(bldc_Motor(1)->pid.igain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_DB: {		
-          mcmd_read_float(bldc_Motor(1)->pid.dgain);
+          mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_W_Bldc_PB: {
@@ -397,7 +397,7 @@ void modbus_cmd() {
           break;
         }
            
-          mcmd_read_float(bldc_Motor(1)->pid.dgain);
+          mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
         // SERIAL NUMBERS
         case MCMD_R_serial_numbers: {			   
           read_int_buf[0] = SN[0];
