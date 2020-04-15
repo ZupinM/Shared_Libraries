@@ -367,12 +367,15 @@ void Chip_ADC_SetClockRate(LPC_ADC0_Type *pADC, uint32_t rate)
 void bldc_adcinit() {
 
   //Battery measurment
+  #ifdef BAT_ADC_PORT
   LPC_GPIO_PORT->CLR[BAT_ADC_PORT] |= 1<<BAT_ADC_PIN;   //UBAT ADC set as input   source = input == pulled up to 3,3V
   
   LPC_GPIO_PORT->SET[BAT_GATE_PORT] |= 1<<BAT_GATE_PIN; //Disable measurment mosfet //out=3,3V Vgs = 0V -> mosfet off
 
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] |= 1<<BAT_GATE_PIN; //Disable measurment mosfet 
 
+  LPC_SWM->PINENABLE[0] &= ~(1<<BAT_ADC_CHANNEL+BAT_ADC_GROUP*12);
+  #endif
 
 
   LPC_IOCON->PIO[I0_ADC_PORT][I0_ADC_PIN] &= ~(3<<3);   //disable I adc pullups
@@ -382,7 +385,6 @@ void bldc_adcinit() {
   #endif
 
   LPC_SWM->PINENABLE[0] = ~(0);
-  LPC_SWM->PINENABLE[0] &= ~(1<<BAT_ADC_CHANNEL+BAT_ADC_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<U_ADC_CHANNEL+U_ADC_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<I0_ADC_CHANNEL+I0_ADC_GROUP*12);
 #ifdef HALL_U_0_PORT
@@ -431,7 +433,10 @@ void bldc_adcinit() {
 
   LPC_ADC1->SEQA_CTRL &= (1 < 31);  // Disable sequence Aad
 
-  LPC_ADC[BAT_ADC_GROUP]->SEQA_CTRL |= (1<<BAT_ADC_CHANNEL); // Enable sampling of channels
+  // Enable sampling of channels
+ #ifdef BAT_ADC_GROUP
+  LPC_ADC[BAT_ADC_GROUP]->SEQA_CTRL |= (1<<BAT_ADC_CHANNEL); 
+ #endif
   LPC_ADC[U_ADC_GROUP]->SEQA_CTRL |= (1<<U_ADC_CHANNEL);
   LPC_ADC[I0_ADC_GROUP]->SEQA_CTRL |= (1<<I0_ADC_CHANNEL);
 #ifdef HALL_U_0_CHANNEL
@@ -449,7 +454,9 @@ void bldc_adcinit() {
   for(int i=0 ; i<50 ; i++);
 
   zeroCurrent_voltage_0 =  ((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+#ifdef MOTOR_B_HI1_PORT
   zeroCurrent_voltage_1 =  ((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+#endif
 
 }
 
@@ -943,9 +950,11 @@ float gpio_U(){
 }
 
 float get_batt_U(){
+#ifdef BAT_GATE_PORT
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] &= ~(1<<BAT_GATE_PIN);  //Enable measurment mosfet
   LPC_IOCON->PIO[BAT_ADC_PORT][BAT_ADC_PIN] &= ~(3<<3);     //diasble pullup on battery adc
   LPC_SWM->PINENABLE[0] &= ~(1<<(BAT_ADC_CHANNEL+12*BAT_ADC_GROUP));  //enable ADC on selected pin
+
 
   for(volatile int i=0 ; i<100 ; i++);
 
@@ -967,6 +976,8 @@ float get_batt_U(){
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] |= 1<<BAT_GATE_PIN; //Disable measurment mosfet
 
   return battery_voltage;
+  #endif
+  return 0;
 }
 
 float bldc_I(unsigned char motor) {
@@ -1013,6 +1024,7 @@ float bldc_I(unsigned char motor) {
 }
 
 void getFocus(void){
+#ifdef FOCUS_H_PORT
 	adc3_SUM += ((LPC_ADC[FOCUS_H_GROUP]->DAT[FOCUS_H_CHANNEL]>>4) &0xfff);
 	adc4_SUM += ((LPC_ADC[FOCUS_V_GROUP]->DAT[FOCUS_V_CHANNEL]>>4) &0xfff);
 
@@ -1025,6 +1037,7 @@ void getFocus(void){
 		adc3_SUM = 0;
 		adc4_SUM = 0;
 	}
+#endif
 
 }
 
@@ -1614,7 +1627,9 @@ void bldc_process() {
     bldc_cm->ctrl = BLDC_CTRL_IDLE;
     bldc_cm->home_remaining = bldc_cm->position;
     bldc_cm->position = bldc_cm->target = 0;
-    ActivateDrivers(0);
+     bldc_manual(1);
+    bldc_Stop(1);
+    bldc_runout(RUNOUT_ACTIVATE);
     return;
   }
 
@@ -1781,7 +1796,7 @@ void bldc_Comutate(unsigned char motor){
 
     
     
-    if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && !(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)){   
+    if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && (!(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)  ||  BLDC_MOTOR_COUNT == 1)){   
         moving_counter[motor] = 100;
         if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_DIRECTION){//Inverted operation
 
