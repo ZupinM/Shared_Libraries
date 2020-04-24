@@ -42,7 +42,7 @@ extern float bldc_Current;
 extern uint8_t voltage_select_0;
 extern uint8_t voltage_select_1;
 extern float UVccHALL_0, UVccHALL_1;
-#if (DEVICE == KVARK)
+#if (DEVICE == KVARK || EPICO)
 extern MODE_TYPE mode;
 #endif
 unsigned int number_TX_bytes0;
@@ -118,7 +118,7 @@ uint8_t writePacket2[0x80];
 /***********************************************************
   MODBUS COMMANDS
 ************************************************************/
-#if (DEVICE == KVARK)
+#if (DEVICE == KVARK || EPICO)
 /***********************************************************
   RX from LORA (Sigma) for KVARK (this positioner)
 ************************************************************/

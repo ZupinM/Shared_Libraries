@@ -388,8 +388,8 @@ void bldc_adcinit() {
   LPC_SWM->PINENABLE[0] = ~(0);
   LPC_SWM->PINENABLE[0] &= ~(1<<U_ADC_CHANNEL+U_ADC_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<I0_ADC_CHANNEL+I0_ADC_GROUP*12);
-#ifdef HALL_U_0_PORT
   LPC_SWM->PINENABLE[0] &= ~(1<<HALL_U_0_CHANNEL+HALL_U_0_GROUP*12);
+#ifdef HALL_U_1_PORT
   LPC_SWM->PINENABLE[0] &= ~(1<<HALL_U_1_CHANNEL+HALL_U_1_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<I1_ADC_CHANNEL+I1_ADC_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<FOCUS_H_CHANNEL+FOCUS_H_GROUP*12);
@@ -440,8 +440,8 @@ void bldc_adcinit() {
  #endif
   LPC_ADC[U_ADC_GROUP]->SEQA_CTRL |= (1<<U_ADC_CHANNEL);
   LPC_ADC[I0_ADC_GROUP]->SEQA_CTRL |= (1<<I0_ADC_CHANNEL);
-#ifdef HALL_U_0_CHANNEL
   LPC_ADC[HALL_U_0_GROUP]->SEQA_CTRL |= (1<<HALL_U_0_CHANNEL);
+#ifdef HALL_U_1_CHANNEL
   LPC_ADC[HALL_U_1_GROUP]->SEQA_CTRL |= (1<<HALL_U_1_CHANNEL);
   LPC_ADC[I1_ADC_GROUP]->SEQA_CTRL |= (1<<I1_ADC_CHANNEL);
   LPC_ADC[FOCUS_H_GROUP]->SEQA_CTRL |= (1<<FOCUS_H_CHANNEL);
@@ -920,11 +920,11 @@ float bldc_U(unsigned char measuring_point) {
   //bldc_Voltage = (((LPC_ADC0->DAT[10]>>4) & 0xfff) >> 2 ) / bldc_cfg.TConvertRatio; 
   //temperature = temperature + ( ((float)bldc_Voltage - temperature)*0.1);//integrator 
 
-  #ifdef HALL_U_0_GROUP 
+   
     bldc_Voltage = ((LPC_ADC[HALL_U_0_GROUP]->DAT[HALL_U_0_CHANNEL]>>4) & 0xfff) >> 2; 
     UVccHALL_0_avg = UVccHALL_0_avg + ( ((float)bldc_Voltage - UVccHALL_0_avg)*0.1);//integrator 
 
-
+  #ifdef HALL_U_1_GROUP
     bldc_Voltage = ((LPC_ADC[HALL_U_1_GROUP]->DAT[HALL_U_1_CHANNEL]>>4) & 0xfff) >>  2; 
     UVccHALL_1_avg = UVccHALL_1_avg + ( ((float)bldc_Voltage - UVccHALL_1_avg)*0.1);//integrator 
 
