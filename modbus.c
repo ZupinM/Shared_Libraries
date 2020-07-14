@@ -95,7 +95,7 @@ extern volatile int rxTimeout0;
 extern unsigned int reset_status;
 extern volatile unsigned int start_count;
 
-volatile int slaveCommandTimeout;
+volatile unsigned int slaveCommandTimeout;
 unsigned int xbLength;
 char xbData[BUFSIZE];
 unsigned int xbSendPacketPrepare(char *pchData, unsigned int uiLength);
@@ -1486,10 +1486,14 @@ void modbus_cmd1() {
     UARTBuffer1[number_TX_bytes1++] = crc_calc1 / 0x100;
 
     if(transceiver == LORA){
+      if(slaveCommandTimeout > 10000000)
+        slaveCommandTimeout -= 1000;     //Prevent hang on uint32 overflow
       int time1 = slaveCommandTimeout;
       while(true) {
-        if(slaveCommandTimeout - time1 > 15)
+        if(slaveCommandTimeout - time1 > 15){
+          slaveCommandTimeout = 0;
           break;
+        }
     }
 
     
