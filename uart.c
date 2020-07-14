@@ -398,7 +398,7 @@ void UART1Send(uint8_t *BufferPtr, uint32_t Length)
   return;
 }
 
-#ifdef KVARK //************************************************************/
+#if (DEVICE ==KVARK)//************************************************************/
 void UARTSend(uint8_t *BufferPtr, uint32_t Length)
 {
   LPC_GPIO_PORT->SET[RS485_RTS_PORT] |= (1 << RS485_RTS_PIN);  // set RTS
@@ -414,7 +414,7 @@ void UARTSend(uint8_t *BufferPtr, uint32_t Length)
   return;
 }
 #else
-#ifdef CONVERTER //********************************************************/
+#if (DEVICE == XBEE2RS485)//********************************************************/
 void UARTSend(uint8_t *BufferPtr, uint32_t Length)
 {
   LPC_GPIO_PORT->SET[RS485_RTS_PORT] |= (1 << RS485_RTS_PIN);  // set RTS

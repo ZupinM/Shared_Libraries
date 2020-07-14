@@ -88,8 +88,11 @@ void cfg_wind_input(){
 
 int Snow_Input(){
   //if(buyflags & (1<<snow_secondary))return; 
+#ifdef SNOW_SENSOR_PORT
   return   !(LPC_GPIO_PORT->PIN[SNOW_SENSOR_PORT]&(1<<SNOW_SENSOR_PIN));
+#endif
 //  return GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3);
+return 0;
 }
 
 
@@ -109,6 +112,7 @@ void check_time() {
 
     
    //****************FOCUS SENSOR PROCESSING****************** 
+#ifdef FOCUS_H_PORT
    //Seek State
     temp=0;
     if(last_seconds24 != (unsigned int)seconds24){//focus sensor correction
@@ -143,6 +147,7 @@ void check_time() {
 
     if((temp==0)&&(!force_recalc)) return;
     force_recalc = 0;
+#endif
     //*******************************************************
     
     ////////////////
@@ -268,6 +273,7 @@ void check_time() {
             
 //S
 // Odmik sledilnika od sonca v primeru previsoke temperature-senzor je na pb3
+#ifdef FOCUS_H_PORT
   if( Snow_Input() && (!(cflags&&(1<<SnowSensInUse))) ){  // 
     count_S = (signed int)Time_out_of_focus*3000;   // mnozi s 3000, da dobis zakasnitev v imp iz minut
   }
@@ -281,6 +287,7 @@ void check_time() {
     angle_A+=focus_angle_A();        //dodajanje offseta[deg]
     angle_B+=focus_angle_B();
   }                   
+#endif
 ///S 
             //---geometry selection---
             bldc_manual(0);
@@ -957,10 +964,12 @@ int Focusing()
 }
 
 void init_weather_sensor(){
+#ifdef WIND_SENSOR_PORT
 
   LPC_INMUX->PINTSEL[1] = WIND_SENSOR_PIN + 32*WIND_SENSOR_PORT;; //pin 0_1 = wind input 
   LPC_PINT->IENR |= 1<<1;
   NVIC_EnableIRQ(PIN_INT1_IRQn);
+#endif
 
 }
 

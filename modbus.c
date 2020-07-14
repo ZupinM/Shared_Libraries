@@ -42,7 +42,7 @@ extern float bldc_Current;
 extern uint8_t voltage_select_0;
 extern uint8_t voltage_select_1;
 extern float UVccHALL_0, UVccHALL_1;
-#ifdef KVARK
+#if (DEVICE == KVARK || EPICO)
 extern MODE_TYPE mode;
 #endif
 unsigned int number_TX_bytes0;
@@ -118,7 +118,7 @@ uint8_t writePacket2[0x80];
 /***********************************************************
   MODBUS COMMANDS
 ************************************************************/
-#ifdef KVARK
+#if (DEVICE == KVARK || EPICO)
 /***********************************************************
   RX from LORA (Sigma) for KVARK (this positioner)
 ************************************************************/
@@ -295,7 +295,109 @@ void modbus_cmd() {
           }			 
           break;	
         }
+        case MCMD_R_Bldc_PA: {		
+          mcmd_read_float(bldc_Motor(0)->pid.pgain, (char *)UARTBuffer0);
+          break;		
+        }
+        case MCMD_R_Bldc_IA: {		
+          mcmd_read_float(bldc_Motor(0)->pid.igain, (char *)UARTBuffer0);
+          break;		
+        }
+        case MCMD_R_Bldc_DA: {		
+          mcmd_read_float(bldc_Motor(0)->pid.dgain, (char *)UARTBuffer0);
+          break;		
+        }
+        case MCMD_W_Bldc_PA: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(0)->pid.pgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_IA: {
+          Ftemp = mcmd_write_limit_float (0.000001, 1.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(0)->pid.igain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_DA: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(0)->pid.dgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+
+        case MCMD_R_Bldc_PB: {		
+          mcmd_read_float(bldc_Motor(1)->pid.pgain, (char *)UARTBuffer0);
+          break;		
+        }
+        case MCMD_R_Bldc_IB: {		
+          mcmd_read_float(bldc_Motor(1)->pid.igain, (char *)UARTBuffer0);
+          break;		
+        }
+        case MCMD_R_Bldc_DB: {		
+          mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
+          break;		
+        }
+        case MCMD_W_Bldc_PB: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(1)->pid.pgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_IB: {
+          Ftemp = mcmd_write_limit_float (0.000001, 1.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(1)->pid.igain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+        case MCMD_W_Bldc_DB: {
+          Ftemp = mcmd_write_limit_float (0.001, 10.0, 0);
+          if (m_ack_state == 0) {
+            bldc_Motor(1)->pid.dgain = Ftemp;
+            eepromUpdate = 1;
+          }
+          break;
+        }
+
+        case MCMD_R_Bldc_Deadband: {
+          read_int_buf[0] = bldc_Motor(0)->pid.deadband | (bldc_Motor(1)->pid.deadband << 16);
+          mcmd_read_int(1, slave_addr);
+          break;
+        }
+        case MCMD_W_Bldc_Deadband: {
+
+          Utemp = mcmd_write_int1();
+          unsigned int dbA =  Utemp & 0xFFFF;
+          unsigned int dbB =  (Utemp >> 16) & 0xFFFF;
+
+          if (dbA <= 0)
+            dbA = 1;
+          if (dbB <= 0)
+            dbB = 1;
+
+          if (dbA <= 100 && dbB <= 100) {
+            bldc_Motor(0)->pid.deadband = dbA;
+            bldc_Motor(1)->pid.deadband = dbB;
+            eepromUpdate = 1;
+            ack_reply();
+          }
+          else
+            err_reply();
+
+          break;
+        }
            
+          mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
         // SERIAL NUMBERS
         case MCMD_R_serial_numbers: {			   
           read_int_buf[0] = SN[0];
@@ -1607,7 +1709,7 @@ volatile uint8_t UARTTest1[BUFSIZE];
 // from positioner via ZigBee / LoRa converter to sigma
 void modbus_cmd2() {
 
-#ifdef KVARK
+#if (DEVICE == KVARK)
 memcpy((char *)UARTBuffer2, (char *)UARTBuffer0, BUFSIZE);
 UARTCount2 = UARTCount0;
 #endif
@@ -2840,4 +2942,13 @@ void xbee_conCheck() {
   xbData[6] = 0X44;
   xbData[7] = 0X69;
   UART1Send((uint8_t *)(&xbData[0]), 8);
+}
+
+int isOnlineDevice(unsigned int dev) {
+  int n = (dev - 1) / 8;
+
+  if((available_positioners[n] & (1 << (dev - n * 8 - 1))) == (1 << (dev - n * 8 - 1)))
+    return 1;
+
+  return 0;
 }

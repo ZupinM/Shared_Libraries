@@ -1,13 +1,9 @@
 diff a/modbus.c b/modbus.c	(rejected hunks)
-@@ -41,9 +41,9 @@
- extern uint8_t voltage_select_0;
- extern uint8_t voltage_select_1;
- extern float UVccHALL_0, UVccHALL_1;
--#ifdef KVARK
-+
- extern MODE_TYPE mode;
--#endif
-+
- unsigned int number_TX_bytes0;
- unsigned int number_TX_bytes1;
- unsigned int number_TX_bytes2;
+@@ -296,7 +296,6 @@
+           break;	
+         }
+            
+-        case MCMD_R_Bldc_PA: {		
+         // SERIAL NUMBERS
+         case MCMD_R_serial_numbers: {			   
+           read_int_buf[0] = SN[0];

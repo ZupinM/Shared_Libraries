@@ -146,24 +146,45 @@
 #define MCMD_R_ref_toolong								0x6E	//110	//60 ....4320000 (50 days) - seconds before too long running to home error 
 #define MCMD_W_ref_toolong								0x6F	//111	//
 
-#define MCMD_W_StartI_ratioA   0x70
+#define MCMD_W_StratI_ratioA   0x70
 #define MCMD_R_StartI_ratioA   0x71
-#define MCMD_W_StartI_ratioB   0x72
+#define MCMD_W_StratI_ratioB   0x72
 #define MCMD_R_StartI_ratioB   0x73
 
-#define MCMD_W_StartI_timeA    0x74
+#define MCMD_W_StratI_timeA    0x74
 #define MCMD_R_StartI_timeA    0x75
-#define MCMD_W_StartI_timeB    0x76
+#define MCMD_W_StratI_timeB    0x76
 #define MCMD_R_StartI_timeB    0x77
 
 #define MCMD_R_All_PARAM			    0x78
 
 #define MCMD_W_SERIAL_slave_addr	0x79
 
+#define MCMD_W_Voltage_hall       0x7A        // Voltage supply for hall sensors
+#define MCMD_R_Voltage_hall       0x7B
+#define MCMD_R_Uhall_0            0x7C
+#define MCMD_R_Uhall_1            0x7D
+
 #define MCMD_R_Batt_voltage       0x7E
 #define MCMD_R_MSpeed             0x7F		
 #define MCMD_R_NPoles             0x94		
 #define MCMD_W_NPoles             0x95
+
+// BLDC motor parameters
+#define MCMD_W_Bldc_PA         0xC0
+#define MCMD_R_Bldc_PA         0xC1
+#define MCMD_W_Bldc_IA         0xC2
+#define MCMD_R_Bldc_IA         0xC3
+#define MCMD_W_Bldc_DA         0xC4
+#define MCMD_R_Bldc_DA         0xC5
+#define MCMD_W_Bldc_PB         0xC6
+#define MCMD_R_Bldc_PB         0xC7
+#define MCMD_W_Bldc_IB         0xC8
+#define MCMD_R_Bldc_IB         0xC9
+#define MCMD_W_Bldc_DB         0xCA
+#define MCMD_R_Bldc_DB         0xCB
+#define MCMD_W_Bldc_Deadband   0xCC
+#define MCMD_R_Bldc_Deadband   0xCD
 
 #define MCMD_W_Detection_I_A			0x80
 #define MCMD_R_Detection_I_A			0x81
@@ -172,6 +193,9 @@
 
 #define MCMD_R_Invert_motor                     0xa0
 #define MCMD_W_Invert_motor                     0xa1
+
+#define MCMD_R_NC_EndSwitch                     0xa2
+#define MCMD_W_NC_EndSwitch                     0xa3
 
 #define MCMD_W_Lock_Tracker				0xf0
 #define MCMD_W_UnLockTracker			0xf1
