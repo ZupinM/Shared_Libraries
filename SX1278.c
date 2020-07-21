@@ -4,6 +4,7 @@
 #include "../main.h"
 #include "modbus.h"
 #include "uart.h"
+#include "spi.h"
 
 //#include "LPC11xx.h"
 

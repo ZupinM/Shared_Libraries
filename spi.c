@@ -1,6 +1,8 @@
 #include "LPC15xx.h"
 #include "../main.h"
 #include "../gpio.h"
+#include "SX1278.h"
+#include "spi.h"
 
 
 void PIN_INT0_IRQHandler() { //LoRa external interrupt received
