@@ -58,15 +58,15 @@
 #define CMD_RUN_GET_PING        0xB8
 #define CMD_RUN_GET_VERSION     0xBF
 
-#define INTCOM_LORA_GET_SETTINGS    0xB1
-#define INTCOM_LORA_SET_SETTINGS    0xB2
-#define INTCOM_LORA_SET_ID_BY_SN    0xB4
-#define INTCOM_CONV_GET_SN_BY_ID    0xBC
-#define INTCOM_LORA_GET_SLAVES	    0xB6
-#define INTCOM_LORA_GET_ROUTE	    0xB8
-#define INTCOM_LORA_SET_ROUTE	    0xB9
-#define INTCOM_LORA_GET_RSSI		0xBA
-#define INTCOM_LORA_RESET_ROUTES 	0xBB
+#define MCMD_LORA_GET_SETTINGS    0xB1
+#define MCMD_LORA_SET_SETTINGS    0xB2
+#define MCMD_LORA_SET_ID_BY_SN    0xB4
+#define MCMD_CONV_GET_SN_BY_ID    0xBC
+#define MCMD_LORA_GET_SLAVES	    0xB6
+#define MCMD_LORA_GET_ROUTE	    0xB8
+#define MCMD_LORA_SET_ROUTE	    0xB9
+#define MCMD_LORA_GET_RSSI		0xBA
+#define MCMD_LORA_RESET_ROUTES 	0xBB
 
 // general infos
 #define MCMD_R_status					0x20	//32	//status flags, i.e. errors,..
@@ -84,7 +84,7 @@
 #define MCMD_R_errorB_stats                     0x2C
 
 // HELIOS commands
-#define INTCOM_LORA_GET_PARAMS      0x19
+#define MCMD_LORA_GET_PARAMS      0x19
 #define MCMD_W_fromH                0x20
 #define MCMD_W_sepH                 0x24  // $ separator
 #define MCMD_R_LoRaData             0xC3

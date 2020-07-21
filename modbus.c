@@ -1434,7 +1434,7 @@ void modbus_cmd1() {
   crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, UARTCount, CRC_NORMAL);
 
   // not for slave and not for positioner
-  if(crc_calc1 == 0 && (UARTBuffer1[1] == INTCOM_LORA_GET_ROUTE || (UARTBuffer1[1] == INTCOM_LORA_SET_ROUTE))) {
+  if(crc_calc1 == 0 && (UARTBuffer1[1] == MCMD_LORA_GET_ROUTE || (UARTBuffer1[1] == MCMD_LORA_SET_ROUTE))) {
     UARTCount1 = 0;
     return;
   }
@@ -1576,11 +1576,11 @@ void modbus_cmd1() {
             UARTBuffer1[1] == CMD_RUN_GET_VERSION ||      // get version
             UARTBuffer1[1] == CMD_RUN_GET_VOLTAGE ||      // get voltage
             UARTBuffer1[1] == CMD_ZB2RS_RESET ||          // module reset
-            UARTBuffer1[1] == INTCOM_LORA_SET_SETTINGS || // set LoRa settings
-            UARTBuffer1[1] == INTCOM_LORA_GET_SETTINGS || // get LoRa settings
-            UARTBuffer1[1] == INTCOM_LORA_SET_ID_BY_SN || // set LoRa ID
-            (UARTBuffer1[1] == INTCOM_CONV_GET_SN_BY_ID && UARTBuffer1[0] != 100) || // get LoRa SN
-            UARTBuffer1[1] == INTCOM_LORA_GET_RSSI)       // get LoRa RSSI
+            UARTBuffer1[1] == MCMD_LORA_SET_SETTINGS || // set LoRa settings
+            UARTBuffer1[1] == MCMD_LORA_GET_SETTINGS || // get LoRa settings
+            UARTBuffer1[1] == MCMD_LORA_SET_ID_BY_SN || // set LoRa ID
+            (UARTBuffer1[1] == MCMD_CONV_GET_SN_BY_ID && UARTBuffer1[0] != 100) || // get LoRa SN
+            UARTBuffer1[1] == MCMD_LORA_GET_RSSI)       // get LoRa RSSI
          )) 
   {
     crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, number_TX_bytes1, CRC_NORMAL);
@@ -1747,7 +1747,7 @@ UARTCount2 = UARTCount0;
           break;
         }
 
-        case INTCOM_CONV_GET_SN_BY_ID: {  // get SN for defined slave
+        case MCMD_CONV_GET_SN_BY_ID: {  // get SN for defined slave
           if(UARTBuffer2[0] == 100) {
             UARTBuffer2[2] = (SN[0] >> 24) & 0xff;
             UARTBuffer2[3] = (SN[0] >> 16) & 0xff;
@@ -1804,7 +1804,7 @@ UARTCount2 = UARTCount0;
 
     TX:
     if(UARTBuffer2[1] == CMD_ZB2RS_MASTER_SLAVE ||
-     (UARTBuffer2[1] == INTCOM_CONV_GET_SN_BY_ID && UARTBuffer2[0] == 100)
+     (UARTBuffer2[1] == MCMD_CONV_GET_SN_BY_ID && UARTBuffer2[0] == 100)
      ) {
       crc_calc2 = modbus_crc((uint8_t *)UARTBuffer2, number_TX_bytes2, CRC_NORMAL);
       UARTBuffer2[number_TX_bytes2++] = crc_calc2 & 0xFF;
@@ -1834,17 +1834,17 @@ UARTCount2 = UARTCount0;
            UARTBuffer2[1] == CMD_RUN_GET_VOLTAGE ||
            UARTBuffer2[1] == CMD_ZB2RS_MASTER_SLAVE || 
            UARTBuffer2[1] == CMD_ZB2RS_RESET || 
-           UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS ||
-           UARTBuffer2[1] == INTCOM_LORA_GET_SETTINGS || 
-           UARTBuffer2[1] == INTCOM_LORA_GET_SLAVES   ||
-           UARTBuffer2[1] == INTCOM_LORA_RESET_ROUTES) && 
+           UARTBuffer2[1] == MCMD_LORA_SET_SETTINGS ||
+           UARTBuffer2[1] == MCMD_LORA_GET_SETTINGS || 
+           UARTBuffer2[1] == MCMD_LORA_GET_SLAVES   ||
+           UARTBuffer2[1] == MCMD_LORA_RESET_ROUTES) && 
          crc_calc2 == 0 && UARTBuffer2[0] == 0xFF) ||     // normal mode, broadcast (ID=0xFF)
-         (UARTBuffer2[1] == INTCOM_CONV_GET_SN_BY_ID && UARTBuffer2[0] == 100) || // get SN from master
-         ((UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS ||
-           UARTBuffer2[1] == INTCOM_LORA_GET_ROUTE || 
-             UARTBuffer2[1] == INTCOM_LORA_SET_ROUTE
+         (UARTBuffer2[1] == MCMD_CONV_GET_SN_BY_ID && UARTBuffer2[0] == 100) || // get SN from master
+         ((UARTBuffer2[1] == MCMD_LORA_SET_SETTINGS ||
+           UARTBuffer2[1] == MCMD_LORA_GET_ROUTE || 
+             UARTBuffer2[1] == MCMD_LORA_SET_ROUTE
            
-           || UARTBuffer2[1] == INTCOM_LORA_GET_PARAMS  // Helios commands
+           || UARTBuffer2[1] == MCMD_LORA_GET_PARAMS  // Helios commands
            || (UARTBuffer2[1] == MCMD_W_fromH && UARTBuffer2[2] == MCMD_W_sepH &&
             (UARTBuffer2[3] == MCMD_W_LoRaChannelH || UARTBuffer2[3] == MCMD_W_LoRaTxPower
              || UARTBuffer2[3] == MCMD_W_LoRaSF || UARTBuffer2[3] == MCMD_W_LoRaBW
@@ -1927,7 +1927,7 @@ UARTCount2 = UARTCount0;
           break;    
         }
 
-        case INTCOM_CONV_GET_SN_BY_ID: {
+        case MCMD_CONV_GET_SN_BY_ID: {
 
           UARTBuffer2[2] = (SN[0] >> 24) & 0xff;
           UARTBuffer2[3] = (SN[0] >> 16) & 0xff;
@@ -1954,7 +1954,7 @@ UARTCount2 = UARTCount0;
           break;    
         }
 
-        case INTCOM_LORA_RESET_ROUTES: {
+        case MCMD_LORA_RESET_ROUTES: {
           for(int i=0 ; i<164 ; i++)
             for(int n=0 ; n<MAX_ROUTE_HOPS ; n++)
               LoRa_route[i][n] = 0; 
@@ -1971,7 +1971,7 @@ UARTCount2 = UARTCount0;
           break;             
         }        
 
-        case INTCOM_LORA_SET_SETTINGS:
+        case MCMD_LORA_SET_SETTINGS:
         case MCMD_W_fromH:
         {
 
@@ -2031,12 +2031,12 @@ UARTCount2 = UARTCount0;
 
             // for slaves
             UARTBuffer2[0] = 0xFF;
-            UARTBuffer2[1] = INTCOM_LORA_SET_SETTINGS;
+            UARTBuffer2[1] = MCMD_LORA_SET_SETTINGS;
             UARTBuffer2[2] = ch;
             UARTBuffer2[3] = pwr + sf * 0x10;
             UARTBuffer2[4] = module.LoRa_BW;
           }
-          else if (UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS) {
+          else if (UARTBuffer2[1] == MCMD_LORA_SET_SETTINGS) {
             if(UARTBuffer2[2] != 0xff)
               module.channel = UARTBuffer2[2];   //if not bind_by_channel
             module.power = UARTBuffer2[3] & 0x03;  
@@ -2060,7 +2060,7 @@ UARTCount2 = UARTCount0;
           }
 
 
-          if(UARTBuffer2[3] & 0x04 && UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS){ //Enter bindmode command
+          if(UARTBuffer2[3] & 0x04 && UARTBuffer2[1] == MCMD_LORA_SET_SETTINGS){ //Enter bindmode command
             if(LoRa_bindMode_master == 0){
               if(UARTBuffer2[2] == 0xff)
                 LoRa_Bind_Mode(MASTER_BY_CHANNEL);  //binding with the same channel
@@ -2104,7 +2104,7 @@ UARTCount2 = UARTCount0;
           break;
         }
 
-        case INTCOM_LORA_GET_SETTINGS: {
+        case MCMD_LORA_GET_SETTINGS: {
 
           UARTBuffer2[2] = MACK_OK;
           UARTBuffer2[3] = module.channel;
@@ -2118,7 +2118,7 @@ UARTCount2 = UARTCount0;
           break;
         }  
 
-          case INTCOM_LORA_GET_PARAMS: {
+          case MCMD_LORA_GET_PARAMS: {
           UARTBuffer2[2] = MCMD_W_sepH;  // sign separator: $
           UARTBuffer2[3] = MCMD_R_LoRaData;   // Master SN
           char buff[3];
@@ -2179,7 +2179,7 @@ UARTCount2 = UARTCount0;
           break;
         }
 
-        case INTCOM_LORA_GET_SLAVES: {
+        case MCMD_LORA_GET_SLAVES: {
           for(int i=0 ; i<8 ; i++){
             UARTBuffer2[i+2] = (online_slaves >> i*8)  & 0xff;
           }
@@ -2188,7 +2188,7 @@ UARTCount2 = UARTCount0;
           break;
         }
 
-        case INTCOM_LORA_GET_ROUTE: {
+        case MCMD_LORA_GET_ROUTE: {
           for(int i = 0; i < MAX_ROUTE_HOPS; i++) {
               UARTBuffer2[i + 2] = LoRa_route[UARTBuffer2[0]][i];
           }
@@ -2197,7 +2197,7 @@ UARTCount2 = UARTCount0;
           break;
         }
 
-        case INTCOM_LORA_SET_ROUTE: {
+        case MCMD_LORA_SET_ROUTE: {
 
           int destination_id = 0;                         //find destination id
           for(int i = 0; i < MAX_ROUTE_HOPS ; i++)
@@ -2251,15 +2251,15 @@ UARTCount2 = UARTCount0;
      UARTBuffer2[1] == CMD_RUN_GET_VOLTAGE || 
      UARTBuffer2[1] == CMD_ZB2RS_RESET || 
      UARTBuffer2[1] == CMD_ZB2RS_MASTER_SLAVE || 
-     UARTBuffer2[1] == INTCOM_CONV_GET_SN_BY_ID || 
-     UARTBuffer2[1] == INTCOM_LORA_SET_SETTINGS || 
-     UARTBuffer2[1] == INTCOM_LORA_GET_SETTINGS || 
-     UARTBuffer2[1] == INTCOM_LORA_GET_SLAVES || 
-     UARTBuffer2[1] == INTCOM_LORA_GET_ROUTE || 
-     UARTBuffer2[1] == INTCOM_LORA_SET_ROUTE ||
-     UARTBuffer2[1] == INTCOM_LORA_RESET_ROUTES
+     UARTBuffer2[1] == MCMD_CONV_GET_SN_BY_ID || 
+     UARTBuffer2[1] == MCMD_LORA_SET_SETTINGS || 
+     UARTBuffer2[1] == MCMD_LORA_GET_SETTINGS || 
+     UARTBuffer2[1] == MCMD_LORA_GET_SLAVES || 
+     UARTBuffer2[1] == MCMD_LORA_GET_ROUTE || 
+     UARTBuffer2[1] == MCMD_LORA_SET_ROUTE ||
+     UARTBuffer2[1] == MCMD_LORA_RESET_ROUTES
      
-     || UARTBuffer2[1] == INTCOM_LORA_GET_PARAMS
+     || UARTBuffer2[1] == MCMD_LORA_GET_PARAMS
      
     ) {
 
@@ -2308,11 +2308,11 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
         (
           ( UARTBuffer[0] == LoRa_id ||                    // slaveID or broadcast(0x0) for SN setting, set settings
             UARTBuffer[0] == 0x00 ||
-            UARTBuffer[1] == INTCOM_LORA_SET_ID_BY_SN ||
-            UARTBuffer[1] == INTCOM_LORA_SET_SETTINGS ||
-            UARTBuffer[1] == INTCOM_LORA_GET_RSSI ||
+            UARTBuffer[1] == MCMD_LORA_SET_ID_BY_SN ||
+            UARTBuffer[1] == MCMD_LORA_SET_SETTINGS ||
+            UARTBuffer[1] == MCMD_LORA_GET_RSSI ||
               (UARTBuffer[0] == 0xFF &&                    // broadcast(0xFF) for SN getting
-               UARTBuffer[1] == INTCOM_CONV_GET_SN_BY_ID
+               UARTBuffer[1] == MCMD_CONV_GET_SN_BY_ID
               )
           ) &&
           transceiver == LORA                              // << LoRa condition
@@ -2373,7 +2373,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
       break;    
     }
 
-    case INTCOM_LORA_SET_SETTINGS: {
+    case MCMD_LORA_SET_SETTINGS: {
       if(!(UARTBuffer[0] == 0x0 || UARTBuffer[0] == 0xFF || UARTBuffer[0] == slave_addr)) {
         UARTCount0 = 0;
         number_TX_bytes = 0;
@@ -2404,7 +2404,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
       break;
     }
 
-    case INTCOM_LORA_SET_ID_BY_SN: { 
+    case MCMD_LORA_SET_ID_BY_SN: { 
       int SNrx[4];  
       int updateSuccess = 0;
 
@@ -2464,7 +2464,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
       break;
     }
 
-    case INTCOM_CONV_GET_SN_BY_ID: {
+    case MCMD_CONV_GET_SN_BY_ID: {
         UARTBuffer[2] = (SN[0] >> 24) & 0xff;
         UARTBuffer[3] = (SN[0] >> 16) & 0xff;
         UARTBuffer[4] = (SN[0] >> 8)  & 0xff;  
@@ -2490,7 +2490,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
         break;
     }
 
-    case INTCOM_LORA_GET_RSSI: {    
+    case MCMD_LORA_GET_RSSI: {    
         if(UARTBuffer[0] == LoRa_id){   
           UARTBuffer[2] = LoRa_get_rssi();
           *number_TX_bytes = 3;
