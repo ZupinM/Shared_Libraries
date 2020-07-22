@@ -7,6 +7,7 @@
  *    Copyright(C) 2011, Sat Control d.o.o.
  *    All rights reserved.
 **************************************************************************/
+#ifndef __BOOTLOADER__
 
 #include "LPC15xx.h"
 #include "modbus.h"
@@ -2952,3 +2953,4 @@ int isOnlineDevice(unsigned int dev) {
 
   return 0;
 }
+#endif

@@ -398,6 +398,34 @@ void UART1Send(uint8_t *BufferPtr, uint32_t Length)
   return;
 }
 
+void UART2Send(uint8_t *BufferPtr, uint32_t Length)
+{
+  LPC_GPIO_PORT->CLR[0] |= (1 << 24);
+  LPC_GPIO_PORT->SET[0] |= (1 << 24);  // set RTS
+  LPC_USART2->INTENCLR |= (1 << 0);
+
+  while (Length != 0)
+  {
+    UARTTxEmpty2 = 0;	/* not empty in the THR until it shifts out */
+
+    LPC_USART2->TXDATA = *BufferPtr;
+    LPC_USART2->INTENSET |= (1 << 2);
+
+    while (!(UARTTxEmpty2 & 0x01));
+
+    BufferPtr++;
+    Length--;
+  }
+
+  LPC_GPIO_PORT->CLR[0] |= (1 << 24);
+  LPC_GPIO_PORT->SET[0] &= ~(1 << 24); // clear RTS
+
+  LPC_USART2->INTENCLR |= (1 << 2);
+  LPC_USART2->INTENSET |= (1 << 0);
+
+  return;
+}
+
 #if (DEVICE ==KVARK)//************************************************************/
 void UARTSend(uint8_t *BufferPtr, uint32_t Length)
 {

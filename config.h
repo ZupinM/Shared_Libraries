@@ -153,8 +153,8 @@ int move_out_B (void);
 void stop_motor (void);
 void motor_check_position (void);
 void go_ref(void);
-void flash_read (unsigned int read_address);
-void flash_erase (void);
+//void flash_read (unsigned int read_address);
+//void flash_erase (void);
 void analog_value_management(void);
 
 void led_handling(void);
