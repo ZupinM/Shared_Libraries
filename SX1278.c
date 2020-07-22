@@ -221,7 +221,7 @@ uint8_t LoRa_get_rssi(void){
 
 void LoRa_Bind_Mode(uint8_t mode){
 
-  if(!(LoRa_bindMode_slave)){
+  if(!(LoRa_bindMode_slave || LoRa_bindMode_slave)){
 
     OriginalSettings.channel = module.channel;
     OriginalSettings.power = module.power;
