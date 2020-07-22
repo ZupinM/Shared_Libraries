@@ -329,13 +329,13 @@ void UART1Init(uint32_t baudrate)   //ZigBee
 /*****************************************************************************/
 void UART2Init(uint32_t baudrate)
 {
-//  UARTTxEmpty2 = 1;
+  UARTTxEmpty2 = 1;
   UARTCount2 = 0;
   
   NVIC_DisableIRQ(UART2_IRQn);
 
-  LPC_SYSCON->UARTCLKDIV = 0x1;             // UART clock divided by 16
-  LPC_SYSCON->FRGCTRL = 0XFF;               // DIV = 256 if MULT is used
+  //LPC_SYSCON->UARTCLKDIV = 0x1;             // UART clock divided by 16
+  //LPC_SYSCON->FRGCTRL = 0XFF;               // DIV = 256 if MULT is used
 
   LPC_SWM->PINASSIGN[2] &= ~(0xFF << 16);
   LPC_SWM->PINASSIGN[2] |= (23 << 16);  // Tx

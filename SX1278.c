@@ -140,8 +140,8 @@ void rx_finished(void){
 
   LoRa_SPIRead(0x00, module.rxBuffer, module.packetLength);
 
-      debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x" , module.rxBuffer[0], module.rxBuffer[1], module.rxBuffer[2], module.rxBuffer[3], module.rxBuffer[4], module.rxBuffer[5], module.rxBuffer[6], module.rxBuffer[7]);
-      debug_printf("  %d \n" , module.packetLength);
+//      debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x" , module.rxBuffer[0], module.rxBuffer[1], module.rxBuffer[2], module.rxBuffer[3], module.rxBuffer[4], module.rxBuffer[5], module.rxBuffer[6], module.rxBuffer[7]);
+//      debug_printf("  %d \n" , module.packetLength);
 
   checkRouting = 1;
 
