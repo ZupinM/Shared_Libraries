@@ -1630,7 +1630,7 @@ void modbus_cmd1() {
 UARTCount1 = 0;
 }
 
-short xBeeConf;
+int xBeeConf;
 
 ////////////////////////////////////////////////////
 // from ZigBee / LoRa to sigma via converter(master)
@@ -1866,7 +1866,7 @@ UARTCount2 = UARTCount0;
 
         // settings for AT commands
         if(UARTBuffer1[0] == 0x2B && UARTBuffer1[1] == 0x2B && UARTBuffer1[2] == 0x2B) {
-          xBeeConf = 15000;
+          xBeeConf = 1500000;
           UART1Init(9600);
 
         }

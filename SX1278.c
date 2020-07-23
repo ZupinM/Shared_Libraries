@@ -78,6 +78,7 @@ void LoRa_TxPacket(uint8_t * txBuffer_, uint8_t length, uint32_t timeout) {
     memcpy((char * ) txBuffer, (char * ) routedBuffer, length + 4 + total_route_number);
   }
 
+  LoRa_standby();
   set_LED(BLUE, 1, 20); //Turn on BLUE TX LED
 
   LoRa_EntryTx(length, 8000);
@@ -221,7 +222,7 @@ uint8_t LoRa_get_rssi(void){
 
 void LoRa_Bind_Mode(uint8_t mode){
 
-  if(!(LoRa_bindMode_slave || LoRa_bindMode_slave)){
+  if(!(LoRa_bindMode_master || LoRa_bindMode_slave)){
 
     OriginalSettings.channel = module.channel;
     OriginalSettings.power = module.power;
@@ -292,6 +293,7 @@ uint8_t LoRa_config(uint8_t channel, uint8_t power, uint8_t spFactor, uint8_t Lo
 
   uint8_t tmp[10];
 
+  set_settings_flag = 0;
   LoRa_Interrupt(DISABLE_INTERRUPTS);
 
   module.channel = channel;
