@@ -224,7 +224,7 @@ void LoRa_Bind_Mode(uint8_t mode){
 
   if(!(LoRa_bindMode_master || LoRa_bindMode_slave)){
 
-    OriginalSettings.channel = module.channel;
+    OriginalSettings.channel = module.channel;         //Save settings on 1st entry
     OriginalSettings.power = module.power;
     OriginalSettings.spFactor = module.spFactor;
     OriginalSettings.LoRa_BW = module.LoRa_BW;
@@ -260,10 +260,12 @@ void LoRa_Bind_Mode(uint8_t mode){
   }
   else if (mode == DISABLE) { //exit binding mode on slave or master
     if (LoRa_bindMode_slave) {
-      OriginalSettings.channel = module.channel;
-      OriginalSettings.power = module.power;
-      OriginalSettings.spFactor = module.spFactor;
-      OriginalSettings.LoRa_BW = module.LoRa_BW;
+      if(!LoRa_channel_received){
+         module.channel = OriginalSettings.channel;
+         module.power = OriginalSettings.power;
+         module.spFactor = OriginalSettings.spFactor;
+         module.LoRa_BW = OriginalSettings.LoRa_BW;
+      }
       set_LED(BLUE, 1, 500);
       LoRa_bindMode_slave = 0;
       LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET, RxMode); //Set settings to slave
