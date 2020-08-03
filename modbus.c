@@ -247,26 +247,26 @@ void modbus_cmd() {
 				
         case MCMD_W_SERIAL_slave_addr: {
           unsigned int UtempArray[4] = {0, 0, 0, 0};
-          UtempArray[0] = UARTBuffer[2];
-          UtempArray[0] |= ((unsigned int)UARTBuffer[3]) << 8;
-          UtempArray[0] |=  ((unsigned int)UARTBuffer[4]) << 16;
-          UtempArray[0] |=  ((unsigned int)UARTBuffer[5]) << 24;
-          UtempArray[1] = UARTBuffer[6];
-          UtempArray[1] |= ((unsigned int)UARTBuffer[7]) << 8;
-          UtempArray[1] |=  ((unsigned int)UARTBuffer[8]) << 16;
-          UtempArray[1] |=  ((unsigned int)UARTBuffer[9]) << 24;
-          UtempArray[2] = UARTBuffer[10];
-          UtempArray[2] |= ((unsigned int)UARTBuffer[11]) << 8;
-          UtempArray[2] |=  ((unsigned int)UARTBuffer[12]) << 16;
-          UtempArray[2] |=  ((unsigned int)UARTBuffer[13]) << 24;
-          UtempArray[3] = UARTBuffer[14];
-          UtempArray[3] |= ((unsigned int)UARTBuffer[15]) << 8;
-          UtempArray[3] |=  ((unsigned int)UARTBuffer[16]) << 16;
-          UtempArray[3] |=  ((unsigned int)UARTBuffer[17]) << 24;
+          UtempArray[0] = UARTBuffer0[2];
+          UtempArray[0] |= ((unsigned int)UARTBuffer0[3]) << 8;
+          UtempArray[0] |=  ((unsigned int)UARTBuffer0[4]) << 16;
+          UtempArray[0] |=  ((unsigned int)UARTBuffer0[5]) << 24;
+          UtempArray[1] = UARTBuffer0[6];
+          UtempArray[1] |= ((unsigned int)UARTBuffer0[7]) << 8;
+          UtempArray[1] |=  ((unsigned int)UARTBuffer0[8]) << 16;
+          UtempArray[1] |=  ((unsigned int)UARTBuffer0[9]) << 24;
+          UtempArray[2] = UARTBuffer0[10];
+          UtempArray[2] |= ((unsigned int)UARTBuffer0[11]) << 8;
+          UtempArray[2] |=  ((unsigned int)UARTBuffer0[12]) << 16;
+          UtempArray[2] |=  ((unsigned int)UARTBuffer0[13]) << 24;
+          UtempArray[3] = UARTBuffer0[14];
+          UtempArray[3] |= ((unsigned int)UARTBuffer0[15]) << 8;
+          UtempArray[3] |=  ((unsigned int)UARTBuffer0[16]) << 16;
+          UtempArray[3] |=  ((unsigned int)UARTBuffer0[17]) << 24;
           
           if(SN[0] == UtempArray[0] && SN[1] == UtempArray[1] && SN[2] == UtempArray[2] && SN[3] == UtempArray[3]) {
-            if((UARTBuffer[18] > 0) && (UARTBuffer[18] <= 128)) {
-              Utemp = UARTBuffer[18];
+            if((UARTBuffer0[18] > 0) && (UARTBuffer0[18] <= 128)) {
+              Utemp = UARTBuffer0[18];
               ack_reply();
               slave_addr = Utemp;
               eepromUpdate = 1;
