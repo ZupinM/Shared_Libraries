@@ -932,7 +932,8 @@ float get_batt_U(){
 
 
     while(!(LPC_ADC[BAT_ADC_GROUP]->DAT[BAT_ADC_CHANNEL] & (1<<31)));  //wait for data valid
-    bldc_Voltage = (((LPC_ADC[BAT_ADC_GROUP]->DAT[BAT_ADC_CHANNEL]>>4) & 0xfff) >> 2 ) / 11.1; 
+  //fsta  bldc_Voltage = (((LPC_ADC[BAT_ADC_GROUP]->DAT[BAT_ADC_CHANNEL]>>4) & 0xfff) >> 2 ) / 11.1; 
+    bldc_Voltage = (((LPC_ADC[BAT_ADC_GROUP]->DAT[BAT_ADC_CHANNEL]>>4) & 0xfff) >> 2 ) / 6.4; 
 
     battery_voltage +=  ( (float)bldc_Voltage * 0.1);//integrator 
   }

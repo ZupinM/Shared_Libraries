@@ -174,6 +174,10 @@ void modbus_cmd () {
     memcpy((char *)UARTBuffer, (char *)UARTBuffer0, BUFSIZE);
   }
 
+
+//fsta
+//if(UARTBuffer[0]==0)
+//debug_printf("cmd ID: %d, %.2x %.2x %.2x %.2x %.2x %.2x %.2x\n", UARTBuffer[0], UARTBuffer[1], UARTBuffer[2], UARTBuffer[3], UARTBuffer[4], UARTBuffer[5], UARTBuffer[6], UARTBuffer[7]);
 	
   //----- broadcast naslov? ------
   broadcastID = NO_BROADCAST;
@@ -202,7 +206,6 @@ void modbus_cmd () {
       modbus_cnt=0;             //no_modbus timeout
 
       if(((UARTBuffer[0] == LoRa_id ||                       // slaveID or broadcast(0x0) for SN setting, set settings
-            UARTBuffer[0] == 0x00 ||
             UARTBuffer[1] == INTCOM_LORA_SET_ID_BY_SN ||
             UARTBuffer[1] == INTCOM_LORA_SET_SETTINGS ||
             UARTBuffer[1] == INTCOM_LORA_GET_RSSI ||
@@ -216,9 +219,6 @@ void modbus_cmd () {
         && (transceiver == XBEE))) {                                  // ZigBee condition
     
     mode = MODE_NORMAL;
-
- //   UARTBuffer[0] = UARTBuffer[0];
-   // UARTBuffer[1] = UARTBuffer[1];
 
     switch (UARTBuffer[1]) {
 
@@ -372,8 +372,8 @@ void modbus_cmd () {
             }
             break;
           }
-        }
-                        
+
+        }                        
       } else {
 
 
@@ -421,14 +421,27 @@ void modbus_cmd () {
         }
 				
         case MCMD_W_SERIAL_slave_addr: {
-          Utemp = UARTBuffer[2];
-          Utemp |= ((unsigned int)UARTBuffer[3]) << 8;
-          Utemp |= ((unsigned int)UARTBuffer[4]) << 16;
-          Utemp |= ((unsigned int)UARTBuffer[5]) << 24;
+          unsigned int UtempArray[4] = {0, 0, 0, 0};
+          UtempArray[0] = UARTBuffer[2];
+          UtempArray[0] |= ((unsigned int)UARTBuffer[3]) << 8;
+          UtempArray[0] |=  ((unsigned int)UARTBuffer[4]) << 16;
+          UtempArray[0] |=  ((unsigned int)UARTBuffer[5]) << 24;
+          UtempArray[1] = UARTBuffer[6];
+          UtempArray[1] |= ((unsigned int)UARTBuffer[7]) << 8;
+          UtempArray[1] |=  ((unsigned int)UARTBuffer[8]) << 16;
+          UtempArray[1] |=  ((unsigned int)UARTBuffer[9]) << 24;
+          UtempArray[2] = UARTBuffer[10];
+          UtempArray[2] |= ((unsigned int)UARTBuffer[11]) << 8;
+          UtempArray[2] |=  ((unsigned int)UARTBuffer[12]) << 16;
+          UtempArray[2] |=  ((unsigned int)UARTBuffer[13]) << 24;
+          UtempArray[3] = UARTBuffer[14];
+          UtempArray[3] |= ((unsigned int)UARTBuffer[15]) << 8;
+          UtempArray[3] |=  ((unsigned int)UARTBuffer[16]) << 16;
+          UtempArray[3] |=  ((unsigned int)UARTBuffer[17]) << 24;
           
-          if (SN[0]==Utemp) {
-            if((UARTBuffer[6] > 0) && (UARTBuffer[6] <= 128)) {
-              Utemp=UARTBuffer[6];
+          if(SN[0] == UtempArray[0] && SN[1] == UtempArray[1] && SN[2] == UtempArray[2] && SN[3] == UtempArray[3]) {
+            if((UARTBuffer[18] > 0) && (UARTBuffer[18] <= 128)) {
+              Utemp = UARTBuffer[18];
               ack_reply();
               slave_addr = Utemp;
               eepromUpdate = 1;
@@ -1594,6 +1607,10 @@ void modbus_cmd1() {
     return;
   }
 
+//fsta
+//if(UARTBuffer[0]==0)
+//debug_printf("cmd1 ID: %d, %.2x %.2x %.2x %.2x %.2x %.2x %.2x\n", UARTBuffer[0], UARTBuffer[1], UARTBuffer[2], UARTBuffer[3], UARTBuffer[4], UARTBuffer[5], UARTBuffer[6], UARTBuffer[7]);
+
   // check normal packet
   crc_calc1 = modbus_crc((uint8_t *)UARTBuffer1, UARTCount, CRC_NORMAL);
 
@@ -1865,6 +1882,35 @@ void modbus_cmd1() {
             break;
           }
 
+        case MCMD_W_SERIAL_slave_addr: {
+          unsigned int UtempArray[4] = {0, 0, 0, 0};
+          UtempArray[0] = UARTBuffer1[2];
+          UtempArray[0] |= ((unsigned int)UARTBuffer1[3]) << 8;
+          UtempArray[0] |=  ((unsigned int)UARTBuffer1[4]) << 16;
+          UtempArray[0] |=  ((unsigned int)UARTBuffer1[5]) << 24;
+          UtempArray[1] = UARTBuffer1[6];
+          UtempArray[1] |= ((unsigned int)UARTBuffer1[7]) << 8;
+          UtempArray[1] |=  ((unsigned int)UARTBuffer1[8]) << 16;
+          UtempArray[1] |=  ((unsigned int)UARTBuffer1[9]) << 24;
+          UtempArray[2] = UARTBuffer1[10];
+          UtempArray[2] |= ((unsigned int)UARTBuffer1[11]) << 8;
+          UtempArray[2] |=  ((unsigned int)UARTBuffer1[12]) << 16;
+          UtempArray[2] |=  ((unsigned int)UARTBuffer1[13]) << 24;
+          UtempArray[3] = UARTBuffer1[14];
+          UtempArray[3] |= ((unsigned int)UARTBuffer1[15]) << 8;
+          UtempArray[3] |=  ((unsigned int)UARTBuffer1[16]) << 16;
+          UtempArray[3] |=  ((unsigned int)UARTBuffer1[17]) << 24;
+          
+          if(SN[0] == UtempArray[0] && SN[1] == UtempArray[1] && SN[2] == UtempArray[2] && SN[3] == UtempArray[3]) {
+            if((UARTBuffer1[18] > 0) && (UARTBuffer1[18] <= 128)) {
+              slave_addr = UARTBuffer1[18];
+              eeprom_write(SYS_VARS_EE);
+              break;
+            }
+          }
+          break;
+        }
+
           default: {  
             UARTCount1  = 0;
             number_TX_bytes1 = 0;
@@ -1953,6 +1999,11 @@ void modbus_cmd1() {
   RX from RS485 (positioner) forwarding to LORA (Sigma)
 ************************************************************/
 void modbus_cmd2() {
+
+//fsta
+//if(UARTBuffer[0]==0)
+//debug_printf("cmd2 ID: %d, %.2x %.2x %.2x %.2x %.2x %.2x %.2x\n", UARTBuffer0[0], UARTBuffer0[1], UARTBuffer0[2], UARTBuffer0[3], UARTBuffer0[4], UARTBuffer0[5], UARTBuffer0[6], UARTBuffer0[7]);
+
   if(UARTCount0 > 0 ) {
     memcpy((char *)UARTBuffer1, (char *)UARTBuffer0, BUFSIZE);
 
@@ -2012,6 +2063,11 @@ void modbus_cmd2() {
   RX from RS485 (positioner) forwarding to XBEE (Sigma)
 ************************************************************/
 void modbus_cmd3() {
+
+//fsta
+//if(UARTBuffer[0]==0)
+//debug_printf("cmd3 ID: %d, %.2x %.2x %.2x %.2x %.2x %.2x %.2x\n", UARTBuffer0[0], UARTBuffer0[1], UARTBuffer0[2], UARTBuffer0[3], UARTBuffer0[4], UARTBuffer0[5], UARTBuffer0[6], UARTBuffer0[7]);
+
   memcpy((char *)UARTBuffer1, (char *)UARTBuffer0, BUFSIZE);
   xbLength = xbSendPacketPrepare((char *)UARTBuffer1, UARTCount0);
 
