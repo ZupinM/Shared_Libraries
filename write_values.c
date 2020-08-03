@@ -571,7 +571,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
                                 else
                                   bldc_SetInvert(1,0);
                                  
-                                eeprom_write(SYS_VARS_EE1);
+                                //eeprom_write(SYS_VARS_EE1);
                                 break;
                               
     case cnormally_close_es:
@@ -579,7 +579,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
       ES_1_normallyOpenLo = (IntTemp & (1<<1)) >> 1;
       ES_0_normallyOpenHi = (IntTemp & (1<<2)) >> 2;
       ES_1_normallyOpenHi = (IntTemp & (1<<3)) >> 3;
-      eeprom_write(SYS_VARS_EE1);
+      //eeprom_write(SYS_VARS_EE1);
       break;
     case cslave_id:             slave_addr=FloatTemp, eeprom_write(SYS_VARS_EE1); break;
     //case cbuyflags:             change_buyFlags(IntTemp); cfg_wind_input(); break; //if (decrypt(box,IntTemp)) buyflags^=1<<(crypt_output&0x000000FF); break;        //CRYPTED:  MM AA AA xx, kjer xx pomeni kateri bit bo exor-an

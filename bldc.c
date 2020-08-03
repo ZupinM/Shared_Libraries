@@ -86,8 +86,6 @@ LPC_ADC0_Type *LPC_ADC[2] = {(LPC_ADC0_Type           *) LPC_ADC0_BASE , (LPC_AD
 
 
 
-
-
  #define BLDC_ADC_CONTROL     ( 11 - 1 )
  #define BLDC_ADC_U_MEASURE   (0x01) 
  #define BLDC_ADC_I_MEASURE   (0x02) 
@@ -163,6 +161,7 @@ extern float bldc_Current;
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
 bldc_motor *bldc_cm = &bldc_motors[0];
+bldc_motor blank_motor;
 
 //fsta
 extern double show_angle_A;
@@ -708,7 +707,7 @@ void bldc_ClearStatus() {
 }
 
 int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to position
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return -1;
   //bldc_cm = &bldc_motors[motor];
   bldc_motor *mptr = &bldc_motors[motor];
@@ -755,7 +754,7 @@ int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to 
  }
 
 int bldc_setPositionImp(unsigned char motor, int newposImp, int windmode){ //go to position
-  if(motor > BLDC_MOTOR_COUNT) 
+  if(motor >= BLDC_MOTOR_COUNT) 
     return -1;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -792,7 +791,7 @@ int bldc_setPositionImp(unsigned char motor, int newposImp, int windmode){ //go 
 }
 
 int bldc_Home(unsigned char motor) {  //execute homing
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -1;
 
   bldc_cm = &bldc_motors[motor];
@@ -843,7 +842,7 @@ unsigned int bldc_GetEnabledMotors(){
 }
 
 int bldc_Enabled(unsigned char motor) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0 ;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -851,7 +850,7 @@ int bldc_Enabled(unsigned char motor) {
 }
 
 void bldc_SetInvert(unsigned char motor, unsigned int state){
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -874,7 +873,7 @@ void bldc_SetInvert(unsigned char motor, unsigned int state){
 }
 
 unsigned int bldc_GetInvert(unsigned char motor) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0 ;
    bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -882,7 +881,7 @@ unsigned int bldc_GetInvert(unsigned char motor) {
 }
 
 void bldc_SetInvertHall(unsigned char motor, unsigned int state) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -901,7 +900,7 @@ void bldc_SetInvertHall(unsigned char motor, unsigned int state) {
 }
 
 unsigned int bldc_GetInvertHall(unsigned char motor) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0 ;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -909,7 +908,7 @@ unsigned int bldc_GetInvertHall(unsigned char motor) {
 }
 
 int bldc_position_to_pulses(unsigned char motor, float pos) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0;
   bldc_motor *mptr = &bldc_motors[motor];
   return  pos * mptr->gear_ratio;
@@ -1119,7 +1118,7 @@ void bldc_runout(int state){
 }
 
 float bldc_position(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1127,7 +1126,7 @@ float bldc_position(unsigned char motor) {
 }
 
 int bldc_positionImp(unsigned char motor){
-  if(motor>BLDC_MOTOR_COUNT) 
+  if(motor>=BLDC_MOTOR_COUNT) 
     return -0xfff;;
   bldc_motor *mptr = &bldc_motors[motor];
  
@@ -1135,7 +1134,7 @@ int bldc_positionImp(unsigned char motor){
 }
 
 float bldc_target(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1143,7 +1142,7 @@ float bldc_target(unsigned char motor) {
 }
 
 int bldc_targetImp(unsigned char motor){
-  if(motor>BLDC_MOTOR_COUNT) 
+  if(motor>=BLDC_MOTOR_COUNT) 
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1151,7 +1150,7 @@ int bldc_targetImp(unsigned char motor){
 }
 
 float bldc_remaining(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1159,7 +1158,7 @@ float bldc_remaining(unsigned char motor) {
 }
 
 int bldc_remainingImp(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT) 
+  if(motor>=BLDC_MOTOR_COUNT) 
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1167,8 +1166,11 @@ int bldc_remainingImp(unsigned char motor) {
 }
 
 bldc_motor *bldc_Motor(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
-    return (void*)(0);
+  if(motor>=BLDC_MOTOR_COUNT){
+    memset(&blank_motor, 0, sizeof(blank_motor));
+    return &blank_motor;
+  }
+    //return (void*)(0); //Dereferencing NULL pointer is undefined behaviour!!!
   return &bldc_motors[motor];
 }
 
