@@ -163,10 +163,6 @@ bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
 bldc_motor *bldc_cm = &bldc_motors[0];
 bldc_motor blank_motor;
 
-//fsta
-extern double show_angle_A;
-extern double show_angle_B;
-
 #define ADC_CONVERT_TICS 120
 
 void ActivateDrivers(int dir);
