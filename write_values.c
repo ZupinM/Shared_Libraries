@@ -18,7 +18,7 @@
 #include "bldc.h"
 
 //#include "config.h"
-#include "eeprom.h"
+#include "../eeprom.h"
 //#include "usb_lib.h"
 //#include "hw_config.h"
 //#include "usb_pwr.h"
@@ -404,13 +404,18 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
           if (f_pcb_version == 0x1E4601) // not changed
             break;
           f_pcb_version = 0x1E4601; // TIV30f1
-          store_in_flash = 100;
-        } else if (strcmp(version, "36A1") == 0 || strcmp(version, "36a1") == 0) {
+        } 
+        else if (strcmp(version, "36A1") == 0 || strcmp(version, "36a1") == 0) {
           if (f_pcb_version == 0x244101) // not changed
             break;
-          f_pcb_version = 0x244101; // TIV36A1
-          store_in_flash = 100;
+          f_pcb_version = 0x244101; // TIV36A1          
+        } 
+        else if (strcmp(version, "29C3") == 0 || strcmp(version, "29c3") == 0) {
+          if (f_pcb_version == 0x1D4303)
+            break;
+          f_pcb_version = 0x1D4303; // TIV29C3
         }
+        store_in_flash = 100;
         /* if (decrypt(box,IntTemp)) {
             f_pcb_version=crypt_output;                  //CRYPTED: MM xx yy zz, kjer xx=tiv27, yy="B" (ascii), zz=01
             store_in_flash=100;

@@ -20,7 +20,7 @@
 #include "sun.h"
 
 #include "bldc.h"
-#include "main.h"
+#include "../main.h"
 #include "config.h"
 
 #include <stdio.h>

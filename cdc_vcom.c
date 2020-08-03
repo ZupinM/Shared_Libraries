@@ -153,6 +153,11 @@ ErrorCode_t vcom_init(USBD_HANDLE_T hUsb, USB_CORE_DESCS_T *pDesc, USBD_API_INIT
 }
 
 /* Virtual com port buffered read routine */
+//fsta 
+//int iiii = 0;
+uint8_t bufGlb[256];
+int bufPart = 0;
+int upgradePart = 0;
 uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
 {
 	VCOM_DATA_T *pVcom = &g_vCOM;
@@ -161,6 +166,29 @@ uint32_t vcom_bread(uint8_t *pBuf, uint32_t buf_len)
 	if (pVcom->rx_count) {
 		cnt = (pVcom->rx_count < buf_len) ? pVcom->rx_count : buf_len;
 		memcpy(pBuf, pVcom->rx_buff, cnt);
+
+
+//fsta
+//debug_printf("***** %d %d\n", pVcom->rx_count, bufPart);
+
+        if(bufPart == 0)
+          memset(bufGlb, 0xFF, 256);
+
+        memcpy(bufGlb+(bufPart * 64), pBuf, pVcom->rx_count);
+        if(pVcom->rx_count < 64)
+          bufPart = 4;
+        else
+          bufPart++;
+        if(bufPart == 4 /*fsta&& decryptData(bufGlb, bufPart * 64) == 0 && crypdedRx == RX_MODE_NORMAL*/) {
+          upgradePart = bufPart * 64;
+
+//fsta
+//debug_printf("upgradePart ******************** %d\n", pVcom->rx_count);
+
+          bufPart = 0;
+        }
+//fsta
+
 		pVcom->rx_rd_count += cnt;
 
 		/* enter critical section */

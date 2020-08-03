@@ -1,0 +1,9 @@
+diff a/modbus.c b/modbus.c	(rejected hunks)
+@@ -296,7 +296,6 @@
+           break;	
+         }
+            
+-        case MCMD_R_Bldc_PA: {		
+         // SERIAL NUMBERS
+         case MCMD_R_serial_numbers: {			   
+           read_int_buf[0] = SN[0];

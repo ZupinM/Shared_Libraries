@@ -1,5 +1,6 @@
 #include "LPC15xx.h"
 
+
 #define BLDC_PA_POS (1<<5)
 #define BLDC_PA_NEG (1<<1)
 #define BLDC_PB_POS (1<<6)
@@ -63,8 +64,8 @@ const unsigned char bldc_ccw_next[7][3]={
 #include "bldc.h"
 #include "lpc15xx.h"
 #include "pid.h"
-#include "main.h"
-#include "eeprom.h"
+#include "../main.h"
+#include "../eeprom.h"
 
 #include "focus.h"
 
@@ -104,7 +105,7 @@ int          bldc_pause;
 
 unsigned int  bldc_Voltage;
 float         bldc_Uavg;
-unsigned int  bldc_Current;
+unsigned int  raw_Current;
 float         bldc_Iavg;
 float         zeroCurrent_voltage_0;
 float         zeroCurrent_voltage_1;
@@ -115,7 +116,7 @@ float battery_voltage = 3;
 float temperature;
 
 
-uint64_t                        bldc_Speed;     //RPM
+volatile unsigned int           bldc_Speed;     //RPM
 volatile unsigned int           number_of_poles = 2;
 volatile unsigned int           speed_sample_counter;
 volatile unsigned int           bldc_Speed_raw; //ticks from comutation to comutation
@@ -157,7 +158,7 @@ float MOTOR_START_VOLTAGE;
 float UNDERVOLTAGE_LEVEL;
 float MOTOR_CUTOF_LEVEL; 
 
-extern float mzp_current;   
+extern float bldc_Current;   
 
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
@@ -363,27 +364,32 @@ void Chip_ADC_SetClockRate(LPC_ADC0_Type *pADC, uint32_t rate)
 void bldc_adcinit() {
 
   //Battery measurment
+  #ifdef BAT_ADC_PORT
   LPC_GPIO_PORT->CLR[BAT_ADC_PORT] |= 1<<BAT_ADC_PIN;   //UBAT ADC set as input   source = input == pulled up to 3,3V
   
   LPC_GPIO_PORT->SET[BAT_GATE_PORT] |= 1<<BAT_GATE_PIN; //Disable measurment mosfet //out=3,3V Vgs = 0V -> mosfet off
 
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] |= 1<<BAT_GATE_PIN; //Disable measurment mosfet 
 
+  LPC_SWM->PINENABLE[0] &= ~(1<<BAT_ADC_CHANNEL+BAT_ADC_GROUP*12);
+  #endif
 
 
   LPC_IOCON->PIO[I0_ADC_PORT][I0_ADC_PIN] &= ~(3<<3);   //disable I adc pullups
   #ifdef I1_ADC_PORT
   LPC_IOCON->PIO[I1_ADC_PORT][I1_ADC_PIN] &= ~(3<<3);
+  LPC_IOCON->PIO[FOCUS_H_PORT][FOCUS_H_PIN] &= ~(3<<3);
   #endif
 
   LPC_SWM->PINENABLE[0] = ~(0);
-  LPC_SWM->PINENABLE[0] &= ~(1<<BAT_ADC_CHANNEL+BAT_ADC_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<U_ADC_CHANNEL+U_ADC_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<I0_ADC_CHANNEL+I0_ADC_GROUP*12);
-#ifdef HALL_U_0_PORT
   LPC_SWM->PINENABLE[0] &= ~(1<<HALL_U_0_CHANNEL+HALL_U_0_GROUP*12);
+#ifdef HALL_U_1_PORT
   LPC_SWM->PINENABLE[0] &= ~(1<<HALL_U_1_CHANNEL+HALL_U_1_GROUP*12);
   LPC_SWM->PINENABLE[0] &= ~(1<<I1_ADC_CHANNEL+I1_ADC_GROUP*12);
+  LPC_SWM->PINENABLE[0] &= ~(1<<FOCUS_H_CHANNEL+FOCUS_H_GROUP*12);
+  LPC_SWM->PINENABLE[0] &= ~(1<<FOCUS_V_CHANNEL+FOCUS_V_GROUP*12);
 #endif
 
 //  ADC0 - Motor A
@@ -424,13 +430,18 @@ void bldc_adcinit() {
 
   LPC_ADC1->SEQA_CTRL &= (1 < 31);  // Disable sequence Aad
 
-  LPC_ADC[BAT_ADC_GROUP]->SEQA_CTRL |= (1<<BAT_ADC_CHANNEL); // Enable sampling of channels
+  // Enable sampling of channels
+ #ifdef BAT_ADC_GROUP
+  LPC_ADC[BAT_ADC_GROUP]->SEQA_CTRL |= (1<<BAT_ADC_CHANNEL); 
+ #endif
   LPC_ADC[U_ADC_GROUP]->SEQA_CTRL |= (1<<U_ADC_CHANNEL);
   LPC_ADC[I0_ADC_GROUP]->SEQA_CTRL |= (1<<I0_ADC_CHANNEL);
-#ifdef HALL_U_0_CHANNEL
   LPC_ADC[HALL_U_0_GROUP]->SEQA_CTRL |= (1<<HALL_U_0_CHANNEL);
+#ifdef HALL_U_1_CHANNEL
   LPC_ADC[HALL_U_1_GROUP]->SEQA_CTRL |= (1<<HALL_U_1_CHANNEL);
   LPC_ADC[I1_ADC_GROUP]->SEQA_CTRL |= (1<<I1_ADC_CHANNEL);
+  LPC_ADC[FOCUS_H_GROUP]->SEQA_CTRL |= (1<<FOCUS_H_CHANNEL);
+  LPC_ADC[FOCUS_V_GROUP]->SEQA_CTRL |= (1<<FOCUS_V_CHANNEL);
 #endif
 
   LPC_ADC0->SEQA_CTRL |= (1<<18) | (1<<31) | (1<<27); //Enable sequence A, TRIGPOL- rising edge
@@ -439,8 +450,10 @@ void bldc_adcinit() {
 
   for(int i=0 ; i<50 ; i++);
 
-  zeroCurrent_voltage_0 =  ((LPC_ADC0->DAT[5]>>4) & 0xfff) >> 2;
-  zeroCurrent_voltage_1 =  ((LPC_ADC1->DAT[2]>>4) & 0xfff) >> 2;
+  zeroCurrent_voltage_0 =  ((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+#ifdef MOTOR_B_HI1_PORT
+  zeroCurrent_voltage_1 =  ((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+#endif
 
 }
 
@@ -606,7 +619,7 @@ void bldc_init(int LoadDefaults){
   LPC_SCT2->EV0_STATE = 0xffffffff;    //state mask for all states
   LPC_SCT2->EV0_CTRL = (1 << 12); // match 0 condition only
   LPC_SWM->PINASSIGN[8] &= ~(0xFF << 24);
-  LPC_SWM->PINASSIGN[8] |= ((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24);        // PIO1_25 - CHARGE PUMP
+  //LPC_SWM->PINASSIGN[8] |= ((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24);        // PIO1_25 - CHARGE PUMP
 
   LPC_SCT2->CTRL &= ~(1 << 2); // unhalt SCT2 by clearing bit 2 of the CTRL
   LPC_SCT0->CTRL &= ~(1 << 2); // unhalt SCT0 by clearing bit 2 of the CTRL
@@ -633,6 +646,16 @@ void bldc_Lock(int state) {
     bldc_status |= BLDC_LOCKED;
   else
     bldc_status &= ~BLDC_LOCKED;
+}
+
+void Enable_ChargePump(uint8_t state){
+  if(state == 1){
+    LPC_SCT2->CTRL &= ~(1 << 2);                                            // unhalt SCT2 by clearing bit 2 of the CTRL
+    LPC_SWM->PINASSIGN[8] |= ((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24); // assign ouptut pin
+  }else{
+    LPC_SCT2->CTRL |= (1 << 2);                                             // halt by setting bit 2 of the CTRL
+    LPC_SWM->PINASSIGN[8] &= ~((CHARGE_PUMP_PIN+32*CHARGE_PUMP_PORT) << 24);// unassign output pin  
+  }
 }
 
 void bldc_Stop(int CancelManual){ //stop all motors
@@ -893,12 +916,12 @@ float bldc_U(unsigned char measuring_point) {
   //bldc_Voltage = (((LPC_ADC0->DAT[10]>>4) & 0xfff) >> 2 ) / bldc_cfg.TConvertRatio; 
   //temperature = temperature + ( ((float)bldc_Voltage - temperature)*0.1);//integrator 
 
-  #ifdef HALL_U_0_GROUP 
+   
     bldc_Voltage = ((LPC_ADC[HALL_U_0_GROUP]->DAT[HALL_U_0_CHANNEL]>>4) & 0xfff) >> 2; 
     UVccHALL_0_avg = UVccHALL_0_avg + ( ((float)bldc_Voltage - UVccHALL_0_avg)*0.1);//integrator 
 
-
-    bldc_Voltage = ((LPC_ADC[HALL_U_0_GROUP]->DAT[HALL_U_1_CHANNEL]>>4) & 0xfff) >>  2; 
+  #ifdef HALL_U_1_GROUP
+    bldc_Voltage = ((LPC_ADC[HALL_U_1_GROUP]->DAT[HALL_U_1_CHANNEL]>>4) & 0xfff) >>  2; 
     UVccHALL_1_avg = UVccHALL_1_avg + ( ((float)bldc_Voltage - UVccHALL_1_avg)*0.1);//integrator 
 
   #endif
@@ -919,10 +942,16 @@ float bldc_U(unsigned char measuring_point) {
   }
 }
 
+float gpio_U(){
+  return bldc_U(SUPPLY);
+}
+
 float get_batt_U(){
+#ifdef BAT_GATE_PORT
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] &= ~(1<<BAT_GATE_PIN);  //Enable measurment mosfet
   LPC_IOCON->PIO[BAT_ADC_PORT][BAT_ADC_PIN] &= ~(3<<3);     //diasble pullup on battery adc
   LPC_SWM->PINENABLE[0] &= ~(1<<(BAT_ADC_CHANNEL+12*BAT_ADC_GROUP));  //enable ADC on selected pin
+
 
   for(volatile int i=0 ; i<100 ; i++);
 
@@ -944,27 +973,29 @@ float get_batt_U(){
   LPC_GPIO_PORT->DIR[BAT_GATE_PORT] |= 1<<BAT_GATE_PIN; //Disable measurment mosfet
 
   return battery_voltage;
+  #endif
+  return 0;
 }
 
 float bldc_I(unsigned char motor) {
   if(motor == 1){
     if(bldc_motors[1].status & BLDC_STATUS_ACTIVE){
     #ifdef I1_ADC_CHANNEL
-      bldc_Current=((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
-      bldc_Current -= zeroCurrent_voltage_1;
+      raw_Current=((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+      raw_Current -= zeroCurrent_voltage_1;
     #endif
     }
     else
-      bldc_Current = 0;
+      raw_Current = 0;
   }
   else if(motor == 0){
     if(bldc_motors[0].status & BLDC_STATUS_ACTIVE){
-      bldc_Current=((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
+      raw_Current=((LPC_ADC[I0_ADC_GROUP]->DAT[I0_ADC_CHANNEL]>>4) & 0xfff) >> 2;
 
-      bldc_Current -= zeroCurrent_voltage_0;
+      raw_Current -= zeroCurrent_voltage_0;
     }
     else
-      bldc_Current = 0;
+      raw_Current = 0;
   }
 
   if(!(bldc_motors[0].status & BLDC_STATUS_MOVING)){ // get adc current reading in inactive states, to compenstae op.amp offset
@@ -973,34 +1004,37 @@ float bldc_I(unsigned char motor) {
   }
   #ifdef I1_ADC_CHANNEL
   if(!(bldc_motors[1].status & BLDC_STATUS_MOVING)){
-    zeroCurrent_voltage_0 +=  ((((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2) - zeroCurrent_voltage_0)*0.001;
+    zeroCurrent_voltage_1 +=  ((((LPC_ADC[I1_ADC_GROUP]->DAT[I1_ADC_CHANNEL]>>4) & 0xfff) >> 2) - zeroCurrent_voltage_1)*0.001;
   }
   #endif
 
-  bldc_Iavg = bldc_Iavg + ( ((float)bldc_Current - bldc_Iavg)*0.01);//integrator
+  bldc_Iavg = bldc_Iavg + ( ((float)raw_Current - bldc_Iavg)*0.01);//integrator
 
-  mzp_current = (bldc_Iavg / bldc_cfg.IConvertRatio) * 0.5;
+  bldc_Current = (bldc_Iavg / bldc_cfg.IConvertRatio) * 0.5;
 
-  if(mzp_current < 0)            //if negative current
-   mzp_current = 0; 
+  if(bldc_Current < 0)            //if negative current
+   bldc_Current = 0; 
 
 
   if(bldc_cm->index == motor)
-  return (mzp_current);
+  return (bldc_Current);
 }
 
 void getFocus(void){
-	adc3_SUM += ((LPC_ADC1->DAT[11]>>4) &0xfff) >> 2;
-	adc4_SUM += ((LPC_ADC1->DAT[8] >>4) &0xfff) >> 2;
+#ifdef FOCUS_H_PORT
+	adc3_SUM += ((LPC_ADC[FOCUS_H_GROUP]->DAT[FOCUS_H_CHANNEL]>>4) &0xfff);
+	adc4_SUM += ((LPC_ADC[FOCUS_V_GROUP]->DAT[FOCUS_V_CHANNEL]>>4) &0xfff);
 
 	adc_CNT++;
-	if (adc_CNT > 500){
+	if (adc_CNT >= 500){
 		adc_CNT = 0;
+		adc3_VAL = adc3_SUM / 500;
 		adc3_VAL = adc3_SUM / 500;
 		adc4_VAL = adc4_SUM / 500;
 		adc3_SUM = 0;
 		adc4_SUM = 0;
 	}
+#endif
 
 }
 
@@ -1065,14 +1099,16 @@ uint8_t ignore_setpoint = 0;
 
 void bldc_runout(int state){
 
-  if(state == RUNOUT_ACTIVATE){
+  if(state == RUNOUT_ACTIVATE){   //Activate free runout of motor
     ignore_setpoint = 1;   
   }
 
-  if(ignore_setpoint){
+  if(ignore_setpoint){                         //motor runing out (RUNOUT_FREEWHEEL)
     bldc_cm->target = bldc_cm->position;
     if(!(bldc_cm->status & BLDC_STATUS_MOVING)){
-      ignore_setpoint = 0;
+      ignore_setpoint = 0;                     //deactivate motor runout, once stopped
+      bldc_cm->ctrl   = BLDC_CTRL_IDLE;        //deactivate homing
+      ActivateDrivers(0);
     }
   }   
    
@@ -1233,11 +1269,11 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
     //activate pwm high side driver
     switch(NewState & 0xf0){
       case BLDC_PA_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_B_HI1 << 8) | 0xff; break;         // MB H1
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI1 <<  8) | 0xffff00ff; break;        // MB H1
       case BLDC_PB_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff; break;        // MB H2
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff00ffff; break;        // MB H2
       case BLDC_PC_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_B_HI3 << 24) | 0xff; break;        // MB H3
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI3 << 24) | 0x00ffffff; break;        // MB H3
      }
     //activate low side driver
     switch(NewState & 0x0f){
@@ -1264,11 +1300,11 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
     //activate pwm high side driver
     switch(NewState & 0xf0){
       case BLDC_PA_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_A_HI1 <<  8) | 0xff; break;       //  MA H1
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI1 <<  8) | 0xffff00ff; break;       //  MA H1
       case BLDC_PB_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_A_HI2 << 16) | 0xff; break;       //  MA H2
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI2 << 16) | 0xff00ffff; break;       //  MA H2
       case BLDC_PC_POS:
-        LPC_SWM->PINASSIGN[7] = (PIN_A_HI3 << 24) | 0xff; break;       //  MA H3
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI3 << 24) | 0x00ffffff; break;       //  MA H3
     }
     //activate low side driver
     switch(NewState & 0x0f){
@@ -1291,12 +1327,14 @@ void ActivateDrivers(int dir) {
     if(dir != 0)
       return;
     bldc_SetDrivers(0,bldc_cm->index);  //stop
+    Enable_ChargePump(0);
     bldc_cm->status &= ~(BLDC_STATUS_ACTIVE | BLDC_STATUS_MANUAL | BLDC_STATUS_WIND_MODE);
 
   } else {        // only on 1.st entry --- next one is hall comutated
     if(dir == 0)   
       return;
-
+    
+    Enable_ChargePump(1);
     bldc_runtime = 0;
     bldc_pwm = 0;
     bldc_cm->status |= BLDC_STATUS_ACTIVE;
@@ -1586,7 +1624,9 @@ void bldc_process() {
     bldc_cm->ctrl = BLDC_CTRL_IDLE;
     bldc_cm->home_remaining = bldc_cm->position;
     bldc_cm->position = bldc_cm->target = 0;
-    ActivateDrivers(0);
+     bldc_manual(1);
+    bldc_Stop(1);
+    bldc_runout(RUNOUT_ACTIVATE);
     return;
   }
 
@@ -1683,11 +1723,17 @@ void bldc_process() {
   } 
 }
 
-
+int dbg_state;
 //commutation 
 void bldc_Comutate(unsigned char motor){
 
+        //debugigng output toggle
+    LPC_GPIO_PORT->B[1][24] ^= 1;
+
+
     bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
+
+    int raw_timer = LPC_SCT1->COUNT;
 
     //take sample of comutation speed
     if(!LPC_SCT1->EVFLAG & 1<<0){ //read speed only if timer not overflowed
@@ -1702,8 +1748,15 @@ void bldc_Comutate(unsigned char motor){
     LPC_SCT1->EVFLAG |= 1 << 0;   // reset overflow flag
     LPC_SCT1->CTRL |= (1 << 2); // halt speed measurment timer
     LPC_SCT1->CTRL |= (1 << 3); // clear count
+      
 
     unsigned char state = bldc_ReadHall(motor); 
+
+    if(dbg_state == state || state == 0 || state > 6){
+      //LPC_GPIO_PORT->B[1][17] ^= 1;
+      for(volatile int i = 0 ; i<1000; i++);
+    }
+    dbg_state = state;
 
     if(state > 0 && state < 7)
       hall_detect++;
@@ -1725,8 +1778,6 @@ void bldc_Comutate(unsigned char motor){
         }
     }
 
-
-
     
     if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_HALL){ //Swap direct. of encoder count){//inverter 
         if      (bldc_ccw_next[bldc_motors[motor].hall_state][0] == state)  
@@ -1739,10 +1790,10 @@ void bldc_Comutate(unsigned char motor){
         else  if(bldc_cw_next [bldc_motors[motor].hall_state][0] == state)  
           bldc_motors[motor].position++;
     }
+
     
     
-    
-    if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && !(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)){   
+    if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && (!(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)  ||  BLDC_MOTOR_COUNT == 1)){   
         moving_counter[motor] = 100;
         if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_DIRECTION){//Inverted operation
 
@@ -1761,6 +1812,7 @@ void bldc_Comutate(unsigned char motor){
     }else bldc_Speed = 0;
     
     bldc_motors[motor].hall_state = state;//save state
+
 }
 
 
@@ -1781,17 +1833,26 @@ void PIN_INT4_IRQHandler() {
 }  
 
 void PIN_INT5_IRQHandler() {
+  NVIC_DisableIRQ(PIN_INT5_IRQn);
   bldc_Comutate(1);
-  LPC_PINT->IST = 1<<5; //clear edge interrupt
+  LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
+  NVIC_EnableIRQ(PIN_INT7_IRQn);
+  NVIC_EnableIRQ(PIN_INT6_IRQn);
 }  
 
 void PIN_INT6_IRQHandler() {
+  NVIC_DisableIRQ(PIN_INT6_IRQn);
   bldc_Comutate(1);
-  LPC_PINT->IST = 1<<6; //clear edge interrupt
+  LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
+  NVIC_EnableIRQ(PIN_INT5_IRQn);
+  NVIC_EnableIRQ(PIN_INT7_IRQn);
 }  
 
 void PIN_INT7_IRQHandler() {
+  NVIC_DisableIRQ(PIN_INT7_IRQn);
   bldc_Comutate(1);
-  LPC_PINT->IST = 1<<7; //clear edge interrupt
+  LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
+  NVIC_EnableIRQ(PIN_INT5_IRQn);
+  NVIC_EnableIRQ(PIN_INT6_IRQn);
 }  
 

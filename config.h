@@ -32,24 +32,27 @@ Header file za SunTracer
 #define STORAGE_NONE 0
 #define STORAGE_FLASH 1
 #define STORAGE_EEPROM 2
+#define STORAGE_TYPE STORAGE_EEPROM
 
 #define SYS_VARS_ADDR	0x0003F000
-#define SYS_VARS_ADDR1	0x0003F100
+#define SYS_VARS_ADDR1	0x0003F400
 
 #define SYS_VARS_EE     0x0     // in memory map: 0x03200000
-#define SYS_VARS_EE1    0x400   // in memory map: 0x03200400
+#define SYS_VARS_EE1    0x500   // in memory map: 0x0320000
+#define ROUTE_ADDR      0x100
 
 #define MIN_SLAVE_ADDR  1
 #define MAX_SLAVE_ADDR  64
 #define MAX_ROUTE_HOPS  6
  
 //		flags;		
-//#define tick_1ms 			3           //"1" = 20ms tick appear 
+#define tick_1ms 			3           //"1" = 20ms tick appear 
 #define flash_erase_done                10 			//"1" = flash erase for settings is done
 #define reset_it                        11			//"1" = do reset
+#define flash_write_done                15
 #define lineR_measure			17
 #define lineR_init                      18
-//#define Modbus_timeout			19
+#define Modbus_timeout			19
 #define buttonstuck                     20
 
 //auto state
@@ -59,16 +62,16 @@ Header file za SunTracer
 
 //tracker_status flags
 #define ERR_OVERCURRENT_MOTOR_A		(1<<0)		//if motor has exceed max_I_motor value
-//#define ERR_HALL_A			(1<<1)		//if there is no position feedback signal, but current is present 
+#define ERR_HALL_A			(1<<1)		//if there is no position feedback signal, but current is present 
 #define ERR_TOOLONG_REF_A		(1<<2)		//if moving to ref is more than XX minutes
-//#define ERR_CABLE_A			(1<<3)		//if there is no hall nor current flow
+#define ERR_CABLE_A			(1<<3)		//if there is no hall nor current flow
 #define ERR_OVERCURRENT_MOTOR_B		(1<<4)		
-//#define ERR_HALL_B			(1<<5)		 
+#define ERR_HALL_B			(1<<5)		 
 #define ERR_TOOLONG_REF_B		(1<<6)
-//#define ERR_CABLE_B			(1<<7)
+#define ERR_CABLE_B			(1<<7)
 		
 #define SF_POWER_FAILURE		(1<<8)		//uC reset occured
-//#define SF_BUTTON_PRESSED		(1<<9)		//if button was pressed anytime after last status clear
+#define SF_BUTTON_PRESSED		(1<<9)		//if button was pressed anytime after last status clear
 #define SF_NO_MODBUS			(1<<10)		//MODBUS timeout occure in the past
 #define SF_MOVING_OUT_A		   	(1<<11)		//motor A is moving in
 #define	SF_MOVING_IN_A			(1<<12)		//motor A is moving out
@@ -89,13 +92,6 @@ Header file za SunTracer
 #define SF_TRACKING_ENABLED		(1<<25)
 #define SF_SNOW_MODE			(1<<26)
 #define SF_WIND_MODE			(1<<27)
-
-
-//mzp
-//#define SF_TRACKING_ENABLED		(1<<25)
-//#define SF_SNOW_MODE			(1<<26)
-//#define SF_WIND_MODE			(1<<27)
-
 #define SYS_PARAM_EEPROM_ERR		(1<<29)
 #define SYS_PARAM_FLASH_ERR		(1<<30)		//parameters were not stored in flash. Check parameters if they are ok (reset occured after flash erase?)
 
@@ -146,7 +142,6 @@ Header file za SunTracer
 #define BOOT_DEVTYPE		*((unsigned int *)BOOT_DEVTYPE_ADDR)
 #define BOOT_APP_MINVERSION	*((unsigned int *)BOOT_APP_MINVERSION_ADDR)
 
-
 //************** deklaracije ****************
 
 void AutoClearFlag(void);
@@ -158,12 +153,12 @@ int move_out_B (void);
 void stop_motor (void);
 void motor_check_position (void);
 void go_ref(void);
-void flash_read (unsigned int read_address);
-void flash_erase (void);
+//void flash_read (unsigned int read_address);
+//void flash_erase (void);
 void analog_value_management(void);
 
 void led_handling(void);
-void modbus_timeout_handling(void);
+void modbus_timeout_handling(unsigned int *modbus_cnt);
 void moving_check(void);
 void end_switches (void);
 void Watchdog_Init(void);

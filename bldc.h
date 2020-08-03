@@ -132,6 +132,7 @@ unsigned char ButtonStates();
 
 
 float       bldc_U(unsigned char measuring_point);
+float       gpio_U();
 float       bldc_I(unsigned char motor);
 float       get_batt_U();
 int         bldc_getStatus(unsigned char motor);

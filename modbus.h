@@ -19,7 +19,56 @@
 //system commands
 #define MCD_W_reset	  				0x01	//positioner does a reset
 
-//general infos
+#define CRC_NORMAL 0xFFFF
+#define CRC_BOOT 0x1234
+#define CRC_UPGRADE_KVARK 0x579B
+#define CRC_UPGRADE_NANOD 0x68AC
+#define RX_MODE_NORMAL 0
+#define RX_MODE_CRYPTED 1
+#define CRC_MODE_NORMAL 1
+#define CRC_MODE_UPGRADE 2
+
+#define BOOT_ADDR       0x00007F00
+#define APP_ADDR        0x00008100
+
+// bootloader commands
+#define	CMD_READ            0x01
+#define CMD_ERASE           0x02
+#define CMD_ERASE_APP       0x12
+#define	CMD_WRITE           0x03
+#define	CMD_WRITE_APP       0x13
+#define	CMD_GET_CS          0x04
+#define	CMD_RESET           0x05
+#define	CMD_GET_STATUS      0x06	
+#define CMD_GET_LOADER_VER  0x07
+#define CMD_GET_HW_REV	    0x08
+#define CMD_GET_DEVICE_TYPE 0x09
+#define CMD_GET_MINVERSION  0x0A
+#define CMD_SET_ID          0x0B
+#define CMD_SET_SERIAL_ID   0x0C
+#define CMD_GET_APP_SIZE    0x0D
+#define CMD_GET_APP_ADDR    0x0E
+#define CMD_GET_VERSION     0x0F
+
+// running commands
+#define	CMD_ZB2RS_MASTER_SLAVE  0xB0
+#define CMD_RUN_GET_VOLTAGE     0xB3
+#define	CMD_ZB2RS_RESET         0xB5
+#define CMD_RUN_GET_LOADER_VER  0xB7
+#define CMD_RUN_GET_PING        0xB8
+#define CMD_RUN_GET_VERSION     0xBF
+
+#define MCMD_LORA_GET_SETTINGS    0xB1
+#define MCMD_LORA_SET_SETTINGS    0xB2
+#define MCMD_LORA_SET_ID_BY_SN    0xB4
+#define MCMD_CONV_GET_SN_BY_ID    0xBC
+#define MCMD_LORA_GET_SLAVES	    0xB6
+#define MCMD_LORA_GET_ROUTE	    0xB8
+#define MCMD_LORA_SET_ROUTE	    0xB9
+#define MCMD_LORA_GET_RSSI		0xBA
+#define MCMD_LORA_RESET_ROUTES 	0xBB
+
+// general infos
 #define MCMD_R_status					0x20	//32	//status flags, i.e. errors,..
 #define	MCMD_W_status		   		0x21	//33	//clear status flags
 #define MCMD_W_slave_addr			0x22	//34	//????? set slave address (broadcast call, the only slave connected??)
@@ -33,6 +82,16 @@
 #define MCMD_R_events					0x2A  //read active events
 #define MCMD_R_errorA_stats                     0x2B
 #define MCMD_R_errorB_stats                     0x2C
+
+// HELIOS commands
+#define MCMD_LORA_GET_PARAMS      0x19
+#define MCMD_W_fromH                0x20
+#define MCMD_W_sepH                 0x24  // $ separator
+#define MCMD_R_LoRaData             0xC3
+#define MCMD_W_LoRaChannelH         0xC4
+#define MCMD_W_LoRaTxPower          0xC5
+#define MCMD_W_LoRaSF               0xC6
+#define MCMD_W_LoRaBW               0xC7
 
 //commands
 #define MCMD_W_stop_motor			0x30	//48	//stop motors immediatelly
@@ -50,6 +109,8 @@
 #define MCMD_W_SetAxisState  	0x40
 #define MCMD_R_Hall_cntDown		0x41
 #define MCMD_W_Hall_cntDown		0x42
+#define MCMD_R_HallState 			0x43
+#define MCMD_W_SetHallState                     0x44
 
 //parameters
 #define MCMD_R_min_range_A	  0x50	//80	//read minimum moving limit for axis A (impulses)
@@ -147,19 +208,20 @@
 #define MCMD_W_MaxLine_Resistance 0xf6
 
 #define MCMD_R_EndSwithDetectA	  0xf7
-#define MCMD_W_EndSwithDetectA 		0xf8
+#define MCMD_W_EndSwithDetectA    0xf8
 #define MCMD_R_EndSwithDetectB	  0xf9
-#define MCMD_W_EndSwithDetectB 		0xfA
+#define MCMD_W_EndSwithDetectB    0xfA
 
-#define MCMD_R_ZeroOffsetA	  		0xfB
-#define MCMD_W_ZeroOffsetA 				0xfC
-#define MCMD_R_ZeroOffsetB	  		0xfD
-#define MCMD_W_ZeroOffsetB 				0xfE
+#define MCMD_R_ZeroOffsetA	  0xfB
+#define MCMD_W_ZeroOffsetA        0xfC
+#define MCMD_R_ZeroOffsetB	  0xfD
+#define MCMD_W_ZeroOffsetB        0xfE
 
-#define MCMD_R_RampA	  					0x90
-#define MCMD_W_RampA 							0x91
-#define MCMD_R_RampB				  		0x92
-#define MCMD_W_RampB 							0x93
+#define MCMD_R_RampA              0x90
+#define MCMD_W_RampA              0x91
+#define MCMD_R_RampB              0x92
+#define MCMD_W_RampB              0x93
+
 ////////////////////////////////////////////////
 /* Slave replies on every Master's MODBUS command 
 - if OK, reply contains ok + (cmd byte 0xxx xxxx)
@@ -169,73 +231,41 @@
 #define MACK_VALUE_OUT_OF_LIMIT		0x02
 #define MACK_NOT_USED_DURING_REF	0x03
 #define MACK_SEE_STATUS_BYTE		0x04
+#define MACK_UNAVAILABLE			0x05
 ////////////////////////////////////////////////
 
-#define CRC_NORMAL 0xFFFF
-#define CRC_BOOT 0x1234
-#define CRC_UPGRADE_NANOD 0x68AC
-#define CRC_UPGRADE_KVARK 0x579B
-#define RX_MODE_NORMAL 0
-#define RX_MODE_CRYPTED 1
-#define CRC_MODE_NORMAL 1
-#define CRC_MODE_UPGRADE 2
-#define BOOT_ADDR       0x00007F00
-
-#define INTCOM_LORA_GET_SETTINGS    0xB1
-#define INTCOM_LORA_SET_SETTINGS    0xB2
-#define INTCOM_LORA_SET_ID_BY_SN    0xB4
-#define INTCOM_LORA_GET_SN_BY_ID    0xBC
-#define INTCOM_LORA_GET_SLAVES	    0xB6
-#define INTCOM_LORA_GET_ROUTE	    0xB8
-#define INTCOM_LORA_SET_ROUTE	    0xB9
-#define INTCOM_LORA_GET_RSSI		0xBA
-
-// running commands
-#define	CMD_ZB2RS_MASTER_SLAVE  0xB0
-#define CMD_RUN_GET_VOLTAGE     0xB3
-#define	CMD_ZB2RS_RESET         0xB5
-#define CMD_RUN_GET_LOADER_VER  0xB7
-#define CMD_RUN_GET_PING        0xB8
-#define CMD_RUN_GET_VERSION     0xBF
-
 //prototypes
-void modbus_cmd (void);
-void modbus_cmd1 (void);
-void modbus_cmd2 (void);
-void modbus_cmd3 (void);
+void modbus_cmd1(void);
+void modbus_cmd1_master(void);
+void modbus_cmd2(void);
+void modbus_cmd2_master(void);
+void modbus_cmd3(void);
+uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes);
+//void modbus_cmd_data2(void);
 unsigned int modbus_crc(uint8_t *UARTBuff, int length, unsigned int crc_calc);
 void ack_reply(void);
 void ack_val_reply(float fVal);
 void ack_valUI_reply(unsigned int num_int);
 void ack_code_replay(void);
 
-unsigned short getVersionB();
-unsigned short getVersion();  
-
 void err_reply(void);
+
 void mcmd_read_byte(int data);
 unsigned int mcmd_write_byte(unsigned int dn_limit,unsigned int up_limit);
-void mcmd_read_int(unsigned int num_int, uint8_t addr);
+unsigned int mcmd_read_int(unsigned int num_int, uint8_t addr);
 unsigned int mcmd_write_int(unsigned int dn_limit,unsigned int up_limit);
-void mcmd_read_float(float);
-unsigned int mcmd_read_float_conv(float param, char *pchData);
 float mcmd_write_float(float dn_limit,float up_limit);
 unsigned int FloatToUIntBytes(float val);
 float mcmd_write_limit_float(float dn_limit,float up_limit,float offset);
 float mcmd_write_float1();
 unsigned int mcmd_write_int1();
-void append_crc(void);
-
-
-extern unsigned char ES_0_normallyOpenLo;
-extern unsigned char ES_0_normallyOpenHi;
-extern unsigned char ES_1_normallyOpenLo;
-extern unsigned char ES_1_normallyOpenHi;
-
-unsigned int xbSendPacketPrepare(char *pchData, unsigned int uiLength);
-unsigned int xbReceivePacketRestore(char *pchBuffer, unsigned int frameLength);
-unsigned int xbReceivePacketRestoreConv(char *pchBuffer);
-
-void xbee_conCheck();
+void init_short_commands();
+unsigned short getVersionB();
+unsigned short getVersion();
+unsigned int mcmd_read_float(float param, char *pchData);
+uint8_t check_slaves(long long int slaves, volatile int timeout);
+void get_route_order();
+uint8_t check_coexistance(int i, int n);
+void xbee_conCheck(void);
 #endif
 
