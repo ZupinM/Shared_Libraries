@@ -148,6 +148,7 @@ void rx_finished(void){
 
   tmp[0] = 0x8D;
   LoRa_SPIWrite(LR_RegOpMode, tmp, 1); //Rx Mode  
+  rxOffline_counter = 10000;
 
 }
 

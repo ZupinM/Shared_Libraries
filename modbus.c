@@ -656,7 +656,7 @@ void modbus_cmd() {
 
           bflags&=~(1<<time_enable); //Disable micro tracking 
 
-          if(sigma_just_connected < 2000)             //
+          if(sigma_just_connected < 10000){             //
             if(mode == MODE_MICRO){
               tracker_status |= SF_TRACKING_ENABLED;
               mode = MODE_SLAVE_TRACKING;
@@ -664,7 +664,7 @@ void modbus_cmd() {
               tracker_status &= ~SF_TRACKING_ENABLED;
               mode = MODE_SLAVE;
             } 
-
+          }
 
           if(Utemp & (1<<18)){
             if (enabled < 8)
