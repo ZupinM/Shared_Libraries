@@ -1345,7 +1345,7 @@ void modbus_cmd() {
 
   TX:
       if(eepromUpdate) {
-        eeprom_write(SYS_VARS_EE);
+        eeprom_write(EEPROM_ADDR_BACKUP);
       }
       crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
       UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
@@ -1382,7 +1382,7 @@ void modbus_cmd() {
       broadcastID = NO_BROADCAST;
       number_TX_bytes0 = 0;
       if (flags & (1 << reset_it)) {				  //reset ukaz
-        eeprom_write(SYS_VARS_EE);
+        eeprom_write(EEPROM_ADDR_BACKUP);
         LPC_WWDT->FEED = 0xAA;				
         LPC_WWDT->FEED = 0x50;		//napacna sekvenca = takojsen reset
        // while(1);    			//cakaj na wdt reset 
@@ -1641,7 +1641,7 @@ void modbus_cmd1() {
     #if (STORAGE_TYPE == STORAGE_FLASH)
       flash_write(SYS_VARS_ADDR);                   //save parameters
     #elif (STORAGE_TYPE == STORAGE_EEPROM)
-      eeprom_write(SYS_VARS_EE); 
+      eeprom_write(EEPROM_ADDR_BACKUP); 
     #endif    
     LPC_WWDT->FEED = 0xAA;            
     LPC_WWDT->FEED = 0x50;    
@@ -1686,7 +1686,7 @@ void modbus_cmd1_master() {
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif  
           UARTBuffer2[2] = MACK_OK;
           number_TX_bytes2 = 3;
@@ -1764,7 +1764,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif
           UARTBuffer2[2] = MACK_OK;
           number_TX_bytes2 = 3;
@@ -1937,7 +1937,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif  
           UARTBuffer2[2] = MACK_OK;
           number_TX_bytes2 = 3;
@@ -1988,7 +1988,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif             
 
           UARTBuffer2[2] = MACK_OK;
@@ -2119,7 +2119,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif   
 
           if(UARTBuffer2[0] == 0xff){
@@ -2253,7 +2253,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif   
 
           UARTBuffer2[2] = MACK_OK;
@@ -2303,7 +2303,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
       flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-      eeprom_write(SYS_VARS_EE); 
+      eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif    
       LPC_WWDT->FEED = 0xAA;            
       LPC_WWDT->FEED = 0x50;    
@@ -2410,7 +2410,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
       module.power = UARTBuffer[3] & 0x03;
       module.spFactor = (UARTBuffer[3] & 0xf0) >> 4;
       module.LoRa_BW =  UARTBuffer[4]; 
-      eeprom_write(SYS_VARS_EE); 
+      eeprom_write(EEPROM_ADDR_BACKUP); 
 
       if(UARTBuffer[3] & 0x04){
         LoRa_channel_received = 1;
@@ -2468,7 +2468,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
 
       if(updateSuccess){
         // save data
-        eeprom_write(SYS_VARS_EE); 
+        eeprom_write(EEPROM_ADDR_BACKUP); 
 
         UARTBuffer[2] = available_positioners[0];
         UARTBuffer[3] = available_positioners[1]; 

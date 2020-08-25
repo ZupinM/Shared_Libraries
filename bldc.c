@@ -741,7 +741,7 @@ int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to 
 #if BLDC_MOTOR_COUNT > 1
     if( (target_error(bldc_cm->index) < (bldc_cm->pid.deadband * 5)) && (target_error(OTHER_MOTOR(bldc_cm->index)) > (bldc_cm->pid.deadband * 5)) && (!any_motor_moving)){
         bldc_cm = &bldc_motors[OTHER_MOTOR(bldc_cm->index)];
-        eeprom_write(SYS_VARS_EE);
+        //eeprom_write(EEPROM_ADDR_MAIN);
     }
 #endif
 
@@ -930,10 +930,13 @@ float bldc_U(unsigned char measuring_point) {
   bldc_Uavg = bldc_Uavg + ( ((float)bldc_Voltage - bldc_Uavg)*0.1);//integrator
 
   //LPC_ADC1->SEQA_CTRL |= (1<<26); // START next conversion
-
+     
   switch(measuring_point){
     case SUPPLY :
       return (float)bldc_Uavg  / bldc_cfg.UConvertRatio;
+    case SUPPLY_UNFILTERED :
+      //debug_printf("%d\n", bldc_Voltage);
+      return (float)bldc_Voltage / bldc_cfg.UConvertRatio;
     case HALL0 :
       return (float)UVccHALL_0_avg  / bldc_cfg.HConvertRatio;
     case HALL1 :
@@ -1551,15 +1554,16 @@ void bldc_process() {
 
 
 //switch motors when current motor is finished
-#if BLDC_MOTOR_COUNT > 1
     if( (target_error(bldc_cm->index) < (bldc_cm->pid.deadband * 5)) && (target_error(OTHER_MOTOR(bldc_cm->index)) > (bldc_cm->pid.deadband * 5)) && (!any_motor_moving)){
         bldc_Stop(0);
-        eeprom_write(SYS_VARS_EE);
+        eeprom_write(EEPROM_ADDR_MAIN);
+#if BLDC_MOTOR_COUNT > 1
         for(int i=0 ; i<2000000 ; i++);
         bldc_cm = &bldc_motors[OTHER_MOTOR(bldc_cm->index)];
         bldc_cm->ctrl = BLDC_CTRL_TRACKING;
-    }
 #endif
+    }
+
 
   voltage_detection();
   Flag_check();
@@ -1730,8 +1734,7 @@ int dbg_state;
 void bldc_Comutate(unsigned char motor){
 
         //debugigng output toggle
-    LPC_GPIO_PORT->B[1][24] ^= 1;
-
+    //LPC_GPIO_PORT->B[1][24] ^= 1;
 
     bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
 
@@ -1753,12 +1756,6 @@ void bldc_Comutate(unsigned char motor){
       
 
     unsigned char state = bldc_ReadHall(motor); 
-
-    if(dbg_state == state || state == 0 || state > 6){
-      //LPC_GPIO_PORT->B[1][17] ^= 1;
-      for(volatile int i = 0 ; i<1000; i++);
-    }
-    dbg_state = state;
 
     if(state > 0 && state < 7)
       hall_detect++;
