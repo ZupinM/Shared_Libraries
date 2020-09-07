@@ -12,6 +12,7 @@ LoRa_t OriginalSettings;
 
 volatile uint8_t transmission = 0;
 volatile uint8_t lora_int_stat = 0;
+extern uint8_t tx_packet_buffer[BUFSIZE];
 uint8_t BindPacket[7];
 uint8_t LoRa_id;
 
@@ -186,9 +187,21 @@ void check_routing(void) {
 
 }
 
-
-
-
+void set_tx_flag(uint8_t* tx_buffer, uint8_t length){
+  uint32_t tx_timeout = 1000000;
+  while(tx_buffered_flag && tx_timeout > 0){
+    tx_timeout--;
+    if(transmission == 0){
+      LoRa_TxPacket((uint8_t *)tx_packet_buffer, tx_packet_length, 8000);
+      tx_buffered_flag = 0;
+    }
+  }
+  if(tx_buffered_flag == 0){
+    tx_buffered_flag = 1;
+    memcpy((char * ) tx_packet_buffer, (char * ) tx_buffer, length);
+    tx_packet_length = length;
+  }
+}
 
 void LoRa_standby(void) {
   uint8_t tmp = 0x89;

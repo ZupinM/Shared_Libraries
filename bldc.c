@@ -122,8 +122,8 @@ volatile unsigned int           bldc_Speed_raw; //ticks from comutation to comut
 extern unsigned int tracker_status;
 
 extern unsigned int store_in_flash;
-extern unsigned char phase_active;
-extern int mosfet_protection_cnt;
+volatile unsigned char phase_active;
+volatile int mosfet_protection_cnt;
 
 extern uint32_t adc3_VAL;
 extern uint32_t adc4_VAL;
