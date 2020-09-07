@@ -1,4 +1,5 @@
 #include "LPC15xx.h"
+#include "../eeprom.h"
 
 
 #define BLDC_PA_POS (1<<5)

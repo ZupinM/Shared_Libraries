@@ -70,7 +70,7 @@ uint8_t LoRa_Responded = 0;
 
 /* parameters */
 
-extern unsigned char slave_addr;        // slave address on RS485
+extern uint8_t slave_addr;        // slave address on RS485
 long long int online_slaves;
 
 
