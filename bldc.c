@@ -697,8 +697,7 @@ void bldc_ClearStatus() {
     //bldc_motors[i].status &= ~BLDC_STATUS_CLEARMASK;
     bldc_motors[i].status = 0;
     bldc_motors[i].i_err_cnt = 0;
-    bldc_EnableMotor(0,1);
-    bldc_EnableMotor(1,1);
+    bldc_EnableMotor(i,1);
     //bldc_Stop(1);
   }
 }

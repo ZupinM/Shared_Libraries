@@ -35,7 +35,7 @@ unsigned char enabled = 0;
 unsigned char missed_enable = 0;
 unsigned char enable_tracking_retry = 0;
 extern unsigned char enabled_in_micro;
-extern uint16_t sigma_just_connected;
+extern unsigned int sigma_just_connected;
 extern float           LineResistance;
 
 extern uint8_t usb_drive;
@@ -660,7 +660,7 @@ void modbus_cmd() {
 
           bflags&=~(1<<time_enable); //Disable micro tracking 
 
-          if(sigma_just_connected < 10000){             //
+          if(sigma_just_connected < 100000){             //
             if(mode == MODE_MICRO){
               tracker_status |= SF_TRACKING_ENABLED;
               mode = MODE_SLAVE_TRACKING;
@@ -668,6 +668,7 @@ void modbus_cmd() {
               tracker_status &= ~SF_TRACKING_ENABLED;
               mode = MODE_SLAVE;
             } 
+            sigma_just_connected = 100000;
           }
 
           if(Utemp & (1<<18)){
