@@ -541,6 +541,7 @@ void bldc_init(int LoadDefaults){
 #endif
 
   LPC_GPIO_PORT->DIR[CHARGE_PUMP_PORT] |= 1<<CHARGE_PUMP_PIN; //charge pump
+  LPC_GPIO_PORT->CLR[CHARGE_PUMP_PORT] |= 1<<CHARGE_PUMP_PIN; //charge pump pin low -> no current through 15V LDO
 
   LPC_SYSCON->IOCONCLKDIV |= 1;
  
