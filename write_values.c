@@ -227,6 +227,11 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
       break;
     }
 
+    case cmotor_operation: {
+      motor_operation = IntTemp;
+      break;
+    }
+
     case cpid_pA: {
       bldc_Motor(0)->pid.pgain = FloatTemp;
       break;

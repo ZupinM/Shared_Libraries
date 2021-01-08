@@ -64,6 +64,8 @@ typedef struct{
 #define BLDC_MOTOR_STATE_INVERT_HALL_REQUEST (1<<5)
 #define BLDC_MOTOR_STATE_INVERT_HALL_REQUEST_STATE (1<<6)
 
+#define BLDC_MOTOR_STATE_DC_OPERATION (1<<7)
+
 
 #define BLDC_STATUS_ACTIVE       (1<<0)
 #define BLDC_STATUS_CCW          (1<<1)
@@ -101,6 +103,9 @@ typedef struct{
 #define BLDC_SAVE               (1U<<1)
 #define BLDC_LOCKED             (1U<<0)
 
+#define BLDC_CTRL_IDLE         0
+#define BLDC_CTRL_TRACKING     (1<<1)
+#define BLDC_CTRL_HOMING       (1<<2)
 #define BLDC_CTRL_STOP         (1<<3)
 
 #define OTHER_MOTOR(M)   ((M)^1)
@@ -149,6 +154,12 @@ int         bldc_HomeSwitchActive(unsigned char motor, unsigned char switch_h_l)
 void bldc_EnableMotors(unsigned int state);
 void bldc_EnableMotor(unsigned char motor, unsigned char state);
 void bldc_SetDrivers(unsigned char NewState, unsigned char motor);
+void bldc_Comutate(unsigned char motor);
+void dc_Comutate(unsigned char motor, unsigned char state);
+void ActivateDrivers(int dir);
+void Enable_ChargePump(uint8_t state);
+void bldc_update_pwm(unsigned short value);
+void motor_rampDC();
 
 void getFocus(void);
 int m_A_idle();
@@ -167,6 +178,7 @@ unsigned int bldc_GetInvertHall(unsigned char motor);
 void bldc_init(int LoadDefaults);
 void bldc_initStatus(unsigned int status);
 void bldc_process();//run 1ms interval 
+void dc_process();
 void bldc_ClearStatus();
 void bldc_Stop(int CancelManual);
 void bldc_ReleaseDrivers();

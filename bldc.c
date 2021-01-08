@@ -39,7 +39,7 @@
 #define BLDC_CCW_P6 (BLDC_PC_NEG | BLDC_PB_POS)
 
 //Next CW number
-const unsigned char bldc_cw_next[7][3]={
+const unsigned char bldc_cw_next[7][3] = {
                           {0,0,0},
                           {BLDC_CW_S2, BLDC_CW_P2, BLDC_CW_S3},
                           {BLDC_CW_S6, BLDC_CW_P6, BLDC_CW_S1},
@@ -48,9 +48,7 @@ const unsigned char bldc_cw_next[7][3]={
                           {BLDC_CW_S3, BLDC_CW_P3, BLDC_CW_S4},
                           {BLDC_CW_S5, BLDC_CW_P5, BLDC_CW_S6}};
 
- 
-
-const unsigned char bldc_ccw_next[7][3]={
+const unsigned char bldc_ccw_next[7][3] = {
                           {0,0,0},
                           {BLDC_CCW_S2, BLDC_CCW_P2, BLDC_CCW_S3},
                           {BLDC_CCW_S4, BLDC_CCW_P4, BLDC_CCW_S5},
@@ -58,6 +56,9 @@ const unsigned char bldc_ccw_next[7][3]={
                           {BLDC_CCW_S6, BLDC_CCW_P6, BLDC_CCW_S1},
                           {BLDC_CCW_S1, BLDC_CCW_P1, BLDC_CCW_S2},
                           {BLDC_CCW_S5, BLDC_CCW_P5, BLDC_CCW_S6}};
+
+const unsigned char dc_cw_next[8] = {0, 0, 0, 0, 5, 7, 4, 6};
+const unsigned char dc_ccw_next[8] = {0, 0, 0, 0, 6, 4, 7, 5};
 
 //const 
 
@@ -79,13 +80,6 @@ const unsigned char bldc_ccw_next[7][3]={
 #include "suntracer.h"
 
 LPC_ADC0_Type *LPC_ADC[2] = {(LPC_ADC0_Type           *) LPC_ADC0_BASE , (LPC_ADC0_Type           *) LPC_ADC1_BASE} ;
-
-#define BLDC_CTRL_IDLE         0
-#define BLDC_CTRL_TRACKING     (1<<1)
-#define BLDC_CTRL_HOMING       (1<<2)
-
-
-
 
 
  #define BLDC_ADC_CONTROL     ( 11 - 1 )
@@ -166,9 +160,7 @@ bldc_motor *bldc_cm = &bldc_motors[0];
 
 #define ADC_CONVERT_TICS 120
 
-void ActivateDrivers(int dir);
 void Flag_check();
-void bldc_Comutate(unsigned char motor);
 
 unsigned char ButtonStates() {
   unsigned char val = 0;
@@ -222,7 +214,6 @@ void bldc_init_motors(int LoadDefaults)
       bldc_motors[i].position        = 0;
       bldc_motors[i].target          = 0;
       bldc_motors[i].status          = 0;
-      bldc_motors[i].target          = 0;
       bldc_motors[i].home_remaining  = 0;
 
       bldc_motors[i].gear_ratio      = 800;
@@ -668,7 +659,7 @@ void bldc_Stop(int CancelManual){ //stop all motors
 
   for(int i = 0; i < BLDC_MOTOR_COUNT; i++){
 
-  	uint8_t selected_motor = bldc_cm->index;
+    uint8_t selected_motor = bldc_cm->index;
 
     if (CancelManual)
       bldc_cm = &bldc_motors[i];
@@ -676,16 +667,15 @@ void bldc_Stop(int CancelManual){ //stop all motors
     bldc_motors[i].status &= ~BLDC_STATUS_WIND_MODE;
     bldc_cm->target = bldc_cm->position;
      
-     ActivateDrivers(0);
+    ActivateDrivers(0);
 
-      bldc_cm->target = bldc_cm->position;
-       bldc_motors[i].ctrl = BLDC_CTRL_STOP;
+    bldc_cm->target = bldc_cm->position;
+    bldc_motors[i].ctrl = BLDC_CTRL_STOP;
 
     bldc_cm = &bldc_motors[selected_motor];	 //loads previuosly selected motor to finish comutation
 
   }
 }
-
 
 void bldc_ReleaseDrivers() {
   ActivateDrivers(0);
@@ -704,9 +694,13 @@ void bldc_ClearStatus() {
 }
 
 int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to position
+
   if(motor > BLDC_MOTOR_COUNT)
     return -1;
-  //bldc_cm = &bldc_motors[motor];
+
+  if(!any_motor_moving)
+    bldc_cm = &bldc_motors[motor];
+
   bldc_motor *mptr = &bldc_motors[motor];
 
   if(mptr->status & BLDC_STATUS_ERR)
@@ -748,7 +742,7 @@ int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to 
 
   Flag_check();
   return  0;
- }
+}
 
 int bldc_setPositionImp(unsigned char motor, int newposImp, int windmode){ //go to position
   if(motor > BLDC_MOTOR_COUNT) 
@@ -1052,8 +1046,9 @@ int m_idle(){
 }
 
 int m_referencing(){
- if((bldc_motors[0].state & BLDC_STATUS_HOMING)||(bldc_motors[1].state & BLDC_STATUS_HOMING)) return 1;
- return 0;
+  if ((bldc_motors[0].state & BLDC_STATUS_HOMING) || (bldc_motors[1].state & BLDC_STATUS_HOMING))
+    return 1;
+  return 0;
 }
 
 int   motorA_moving()
@@ -1185,7 +1180,7 @@ void Flag_check() {
     if(val >= (-bldc_motors[i].pid.deadband -bounce_stop) && val <= (bldc_motors[i].pid.deadband + bounce_stop))
       bldc_motors[i].status &= ~(BLDC_STATUS_MOVING_OUT | BLDC_STATUS_MOVING_IN);
     else if(bldc_motors[i].status & BLDC_STATUS_MOVING) {
-      if(val>0) {
+      if(val > 0) {
 
         bldc_motors[i].status |= BLDC_STATUS_MOVING_OUT;
         bldc_motors[i].status &= ~BLDC_STATUS_ERR_MOVEOUT;
@@ -1242,10 +1237,9 @@ int bldc_HomeSwitchActive(unsigned char motor , unsigned char switch_h_l) {
   }
 }
 
-
 unsigned char OldState;
-
 void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
+
   //disable pwm drivers
   phase_active = 0;
   mosfet_protection_cnt = 0;
@@ -1253,7 +1247,6 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
   // WDT reset 
   LPC_WWDT->FEED = 0xAA;		
   LPC_WWDT->FEED = 0x55;
-
 
   if(motor==1){
   #ifdef MOTOR_B_LO1_PORT
@@ -1274,7 +1267,18 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
         LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff00ffff; break;        // MB H2
       case BLDC_PC_POS:
         LPC_SWM->PINASSIGN[7] = (PIN_B_HI3 << 24) | 0x00ffffff; break;        // MB H3
-     }
+    }
+
+    if (bldc_motors[motor].state & BLDC_MOTOR_STATE_DC_OPERATION) { // stop DC B motor
+      if ((NewState & 0xf0) & BLDC_PA_POS && (NewState & 0xf0) & BLDC_PB_POS) {
+        if (bldc_motors[motor].status & BLDC_STATUS_MOVING_IN)
+          LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff00ffff;
+        LPC_SWM->PINASSIGN[7] = (PIN_B_HI1 <<  8) | 0xffff00ff;
+        if (bldc_motors[motor].status & BLDC_STATUS_MOVING_OUT)
+          LPC_SWM->PINASSIGN[7] = (PIN_B_HI2 << 16) | 0xff00ffff;
+      }
+    }
+
     //activate low side driver
     switch(NewState & 0x0f){
       case BLDC_PA_NEG:
@@ -1306,6 +1310,17 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
       case BLDC_PC_POS:
         LPC_SWM->PINASSIGN[7] = (PIN_A_HI3 << 24) | 0x00ffffff; break;       //  MA H3
     }
+
+    if (bldc_motors[motor].state & BLDC_MOTOR_STATE_DC_OPERATION) {  // stop DC A motor
+      if ((NewState & 0xf0) & BLDC_PA_POS && (NewState & 0xf0) & BLDC_PB_POS) {
+        if (bldc_motors[motor].status & BLDC_STATUS_MOVING_IN)
+          LPC_SWM->PINASSIGN[7] = (PIN_A_HI2 << 16) | 0xff00ffff;
+        LPC_SWM->PINASSIGN[7] = (PIN_A_HI1 <<  8) | 0xffff00ff;
+        if (bldc_motors[motor].status & BLDC_STATUS_MOVING_OUT)
+          LPC_SWM->PINASSIGN[7] = (PIN_A_HI2 << 16) | 0xff00ffff;
+      }
+    }
+
     //activate low side driver
     switch(NewState & 0x0f){
       case BLDC_PA_NEG:
@@ -1316,7 +1331,6 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
         LPC_GPIO_PORT->SET[MOTOR_A_LO3_PORT] |= 1<<MOTOR_A_LO3_PIN; phase_active++; break;// A L L3
     }
   }
-
 }
 
 
@@ -1328,17 +1342,24 @@ void ActivateDrivers(int dir) {
       return;
     bldc_SetDrivers(0,bldc_cm->index);  //stop
     Enable_ChargePump(0);
+
     bldc_cm->status &= ~(BLDC_STATUS_ACTIVE | BLDC_STATUS_MANUAL | BLDC_STATUS_WIND_MODE);
 
   } else {        // only on 1.st entry --- next one is hall comutated
+
     if(dir == 0)   
       return;
     
     Enable_ChargePump(1);
+
     bldc_runtime = 0;
     bldc_pwm = 0;
     bldc_cm->status |= BLDC_STATUS_ACTIVE;
-    bldc_Comutate(bldc_cm->index);
+    
+    if(!(bldc_cm->state & BLDC_MOTOR_STATE_DC_OPERATION))
+      bldc_Comutate(bldc_cm->index);
+    else
+      dc_Comutate(bldc_cm->index, bldc_ReadHall(bldc_cm->index));
   }
 }
 
@@ -1350,6 +1371,87 @@ unsigned int motor_err(uint8_t motor)
 
 #define BLDC_RAMP_UP 2
 #define BLDC_RAMP_DOWN 10
+
+#define MAX_PWM 0xFFF
+#define START_PWM 315
+#define PWM_STEP 4
+
+int marginPulses;
+int startPulses;
+int halfPos;
+int breaking = 0;
+void motor_rampDC() {
+  int err = bldc_cm->target - bldc_cm->position;
+
+  int diff_start; 
+  if (bldc_cm->index == 0)
+    diff_start = trunc(0.05 * gear_ratio_A);
+  else if (bldc_cm->index == 1)
+    diff_start = trunc(0.05 * gear_ratio_B);
+  else {
+    bldc_pwm = 0;
+    return;
+  }
+
+  if (abs(err) < diff_start) {
+
+    if(breaking > 0 && breaking <= 40) { // 40ms to stop DC motor
+      if (breaking == 1) {
+        bldc_pwm = MAX_PWM;
+        bldc_update_pwm(bldc_pwm);
+        ActivateDrivers(0);
+        bldc_SetDrivers(BLDC_PA_POS | BLDC_PB_POS, bldc_cm->index);
+      }
+      breaking++;
+    } 
+    else { 
+      bldc_pwm = 0;
+      bldc_update_pwm(bldc_pwm);
+      ActivateDrivers(0);
+      if (bldc_cm->ctrl != BLDC_CTRL_STOP) {
+        bldc_Stop(0);
+        bldc_cm->status &= ~BLDC_STATUS_MOVING;
+      }
+      breaking = 0;
+      return;
+    }
+  }
+
+  if (err < 0)
+    bldc_cm->status |= BLDC_STATUS_CCW;
+  else
+    bldc_cm->status &= ~BLDC_STATUS_CCW;
+
+  if(bldc_pwm == 0) { // start
+    bldc_pwm = START_PWM;
+    halfPos = (bldc_cm->target + bldc_cm->position) / 2;
+    startPulses = bldc_cm->position;
+    marginPulses = 0;
+  }
+
+  // marginPulses - no. of start pulses to or half pulses if not start to max PWM
+  else if(bldc_pwm > 0 && ((abs(err) < marginPulses || (bldc_cm->position - halfPos > 0 && err > 0 || bldc_cm->position - halfPos < 0 && err < 0) && marginPulses == 0) ) && (abs(err) >= diff_start) ) { // breaking
+
+    breaking = 1;
+    if ( ((bldc_pwm - START_PWM) / 20) > ((float)abs(err) * 1.03) ) {
+      bldc_pwm -= (PWM_STEP * 20); // faster break
+    } else if ( ((bldc_pwm - START_PWM) / 20) < ((float)abs(err) * 0.97) ) {
+      bldc_pwm += (PWM_STEP * 10); // too fast break
+    }
+    else {
+      // do nothing this syyle
+    }
+  }
+  else if(bldc_pwm < MAX_PWM) { // accelerate
+    bldc_pwm += PWM_STEP;
+  }
+  else { // max power
+    bldc_pwm = MAX_PWM;
+    if(marginPulses == 0) {
+      marginPulses = abs(bldc_cm->position - startPulses);
+    }
+  }
+}
 
 void motor_ramp() {
   int err = bldc_cm->target - bldc_cm->position;
@@ -1532,7 +1634,7 @@ void bldc_process() {
     //check if motor is disconnected
     if(bldc_ReadHall(i) == 7 && bldc_motors[i].status & BLDC_STATUS_ACTIVE){
       disconnected_motor[i]++;
-      if (disconnected_motor[i] > 50){
+     if (disconnected_motor[i] > 50){
         bldc_motors[i].status |= BLDC_STATUS_HALL_FAULT;
         //bldc_motors[0].status |= BLDC_STATUS_CABLEERROR;
         bldc_EnableMotor(i,1);
@@ -1723,13 +1825,235 @@ void bldc_process() {
   } 
 }
 
+float findGearRatioByMot(unsigned char mot) {
+  float gear = 0;
+  if (mot == 0)
+    gear = gear_ratio_A;
+  else if (mot == 1)
+    gear = gear_ratio_B;
+  return gear;
+}
+
+int hallDCount = 0;
+int posPrev = 0;
+int ctrlPrev = BLDC_CTRL_IDLE;
+void dc_process() {
+
+  bldc_runout(RUNOUT_FREEWHEEL);
+
+  if (bldc_GetInvertHall(0))
+    cflags |= 1<<swap_halls_A;
+  else cflags &= ~(1<<swap_halls_A);
+
+  if (bldc_GetInvertHall(1))
+    cflags |= 1<<swap_halls_B;
+  else cflags &= ~(1<<swap_halls_B);
+
+  if (bldc_GetInvert(0))
+    cflags |= 1<<SwapRotation_A;
+  else cflags &= ~(1<<SwapRotation_A);
+
+  if (bldc_GetInvert(1))
+    cflags |= 1<<SwapRotation_B;
+  else cflags &= ~(1<<SwapRotation_B);
+
+
+  any_motor_moving = 0;	
+  for(int i=0 ; i<BLDC_MOTOR_COUNT ; i++){
+
+    if(moving_counter[i]){                          // BLDC_STATUS_MOVING	
+      moving_counter[i] --;	
+      any_motor_moving = 1;	
+    }	
+  }
+
+
+//switch motors when current motor is finished	
+#if BLDC_MOTOR_COUNT > 1	
+  if( (target_error(bldc_cm->index) < (bldc_cm->pid.deadband * 5)) && (target_error(OTHER_MOTOR(bldc_cm->index)) > (bldc_cm->pid.deadband * 5)) && (!any_motor_moving)){	
+    bldc_Stop(0);	
+    eeprom_write(SYS_VARS_EE);	
+    for(int i=0 ; i<2000000 ; i++);	
+    bldc_cm = &bldc_motors[OTHER_MOTOR(bldc_cm->index)];	
+    bldc_cm->ctrl = BLDC_CTRL_TRACKING;	
+  }	
+#endif	
+  voltage_detection();	
+  Flag_check();	
+ // bldc_motor *bldc_cm = &bldc_motors[1];	
+  //***control disabled error state*** 	
+ if(bldc_status & BLDC_LOCKED || !(bldc_cm->state & BLDC_MOTOR_STATE_ENABLED) || bldc_cm->status & BLDC_STATUS_ERR) {	
+    ActivateDrivers(0);	
+    bldc_pause = 0;	
+    bldc_cm->ctrl = BLDC_CTRL_IDLE;	
+    bldc_cm->target = bldc_cm->position;	
+    return;	
+  }
+
+  //****over current detection****	
+  float ILimit;	
+  if (bldc_runtime < bldc_cm->I_Inrush_time)	
+    ILimit = bldc_cm->I_limit *  bldc_cm->I_Inrush_ratio;	
+  else if(bldc_cm->status & BLDC_STATUS_WIND_MODE)	
+    ILimit = bldc_cm->I_limit *  1.3;	
+  else	
+    ILimit = bldc_cm->I_limit;	
+  	
+  if( bldc_I(bldc_cm->index) >= ILimit) {	
+    SetEventParameters(bldc_cm->index);	
+  	
+    ActivateDrivers(0); //stop motor now	
+  	
+    bldc_cm->i_err_cnt++;	
+    if(bldc_cm->i_err_cnt>=1) bldc_cm->status |= BLDC_STATUS_ERR | BLDC_STATUS_OVERCURRENT;	
+    else bldc_pause = 3 * 1000; //5s timeout	
+    return;	
+  }
+
+  //****cable error detection****	
+  if(bldc_cm->status & BLDC_STATUS_ACTIVE && bldc_cm->status & BLDC_STATUS_STALL && abs(bldc_pwm)>=0xa00){	
+    SetEventParameters(bldc_cm->index);	
+    ActivateDrivers(0);	
+    bldc_cm->status |= BLDC_STATUS_ERR | BLDC_STATUS_CABLEERROR;	
+    return;	
+  }	
+  //****end switch error detection****	
+  if(bldc_HomeSwitchActive(bldc_cm->index,0) && bldc_cm->ctrl == BLDC_CTRL_TRACKING && bldc_cm->position > bldc_position_to_pulses(bldc_cm->index, bldc_cm->end_switchDetect - 0.1)){	
+    SetEventParameters(bldc_cm->index);	
+    ActivateDrivers(0);	
+    bldc_cm->status|= BLDC_STATUS_ENDSWITCH_ERROR;	
+    return;	
+  }	
+  if(bldc_HomeSwitchActive(bldc_cm->index,1) && bldc_cm->ctrl == BLDC_CTRL_TRACKING && bldc_cm->position > bldc_position_to_pulses(bldc_cm->index, bldc_cm->end_switchDetect - 0.1)){	
+    SetEventParameters(bldc_cm->index);	
+    ActivateDrivers(0);	
+    bldc_cm->status|= BLDC_STATUS_ENDSWITCH_ERROR;	
+    return;	
+  }	
+    	
+  //****end switch detection****
+  if(bldc_HomeSwitchActive(bldc_cm->index,0) && bldc_cm->ctrl & BLDC_CTRL_HOMING) {
+    ActivateEvent(EVENT_HOME_A_FINISHED);
+    bldc_cm->ctrl = BLDC_CTRL_IDLE;
+    bldc_cm->home_remaining = bldc_cm->position;
+    bldc_cm->position = bldc_cm->target = 0;
+    ctrlPrev = BLDC_CTRL_HOMING;
+    bldc_Stop(1);
+    return;
+  }
+
+		
+  //****Invert direction of rotation or hall****	
+  if(!(bldc_motors[0].status & BLDC_STATUS_MOVING) && (bldc_motors[0].state & BLDC_MOTOR_STATE_INVERT_DIRECTION_REQUEST)){ //After motor A stoped moving	
+    bldc_motors[0].state &= ~BLDC_MOTOR_STATE_INVERT_DIRECTION_REQUEST;	
+    if(bldc_motors[0].state & BLDC_MOTOR_STATE_INVERT_DIRECTION_REQUEST_STATE)	
+      bldc_motors[0].state |= BLDC_MOTOR_STATE_INVERT_DIRECTION;	
+    else	
+      bldc_motors[0].state &= ~BLDC_MOTOR_STATE_INVERT_DIRECTION;	
+  }	
+  if(!(bldc_motors[0].status & BLDC_STATUS_MOVING) && (bldc_motors[0].state & BLDC_MOTOR_STATE_INVERT_HALL_REQUEST)){ //After motor A stoped moving	
+    bldc_motors[0].state &= ~BLDC_MOTOR_STATE_INVERT_HALL_REQUEST;	
+    if(bldc_motors[0].state & BLDC_MOTOR_STATE_INVERT_HALL_REQUEST_STATE)	
+      bldc_motors[0].state |= BLDC_MOTOR_STATE_INVERT_DIRECTION;   	
+    else	
+      bldc_motors[0].state &= ~BLDC_MOTOR_STATE_INVERT_DIRECTION; 	
+  }	
+  if(!(bldc_motors[1].status & BLDC_STATUS_MOVING) && (bldc_motors[1].state & BLDC_MOTOR_STATE_INVERT_DIRECTION_REQUEST)){ //After motor B stoped moving	
+    bldc_motors[1].state &= ~BLDC_MOTOR_STATE_INVERT_DIRECTION_REQUEST;	
+    if(bldc_motors[1].state & BLDC_MOTOR_STATE_INVERT_DIRECTION_REQUEST_STATE)	
+      bldc_motors[1].state |= BLDC_MOTOR_STATE_INVERT_DIRECTION;	
+    else	
+      bldc_motors[1].state &= ~BLDC_MOTOR_STATE_INVERT_DIRECTION;	
+  }	
+  if(!(bldc_motors[1].status & BLDC_STATUS_MOVING) && (bldc_motors[1].state & BLDC_MOTOR_STATE_INVERT_HALL_REQUEST)){ //After motor B stoped moving	
+    bldc_motors[1].state &= ~BLDC_MOTOR_STATE_INVERT_HALL_REQUEST;	
+    if(bldc_motors[1].state & BLDC_MOTOR_STATE_INVERT_HALL_REQUEST_STATE)	
+      bldc_motors[1].state |= BLDC_MOTOR_STATE_INVERT_DIRECTION;   	
+    else	
+      bldc_motors[1].state &= ~BLDC_MOTOR_STATE_INVERT_DIRECTION; 	
+  }	
+  //*************************************************************	
+
+  // Homing timeout
+  if(bldc_cm->ctrl == BLDC_CTRL_HOMING && bldc_cm->homing_time >= (bldc_cfg.homing_timeout * 1000)) {
+    bldc_cm->status |= BLDC_STATUS_ERR | BLDC_STATUS_HOME_TIMEOUT;
+    bldc_Stop(1);
+  }
+
+  //***Process control function*****	
+  if(bldc_cm->ctrl & BLDC_CTRL_STOP) { //STOP REQUEST	
+    bldc_cm->target = bldc_cm->position;                    //force ramp down	
+  }else if(bldc_cm->ctrl == BLDC_CTRL_HOMING) {
+    bldc_cm->target = bldc_cm->position - bldc_position_to_pulses(0, 10);      //set destination negative
+    bldc_cm->homing_time++;
+  }
+
+  motor_rampDC();
+  bldc_update_pwm(bldc_pwm);
+
+  if((bldc_pwm > 0) && !any_motor_moving && bldc_cm->ctrl != BLDC_CTRL_STOP) {
+
+    ActivateDrivers(1);
+
+  } else if (!any_motor_moving) {  //deactivate drivers
+    bldc_idletime++;
+    if(bldc_idletime>=100) {
+      bldc_idletime = 100;
+      bldc_cm->ctrl = BLDC_CTRL_IDLE;  
+      ActivateDrivers(0);
+    }
+  } 
+  else if(!(bldc_motors[0].status & BLDC_STATUS_MOVING) && !(bldc_motors[1].status & BLDC_STATUS_MOVING))
+    any_motor_moving = 0;
+
+
+  if (bldc_cm->ctrl == BLDC_CTRL_STOP) {
+    bldc_pwm = 0;
+    ActivateDrivers(0);
+  }
+
+  mosfet_protection_cnt = 0;
+
+  Flag_check();
+
+  // check all hall disconnected detection
+  if(bldc_cm->status & BLDC_STATUS_MOVING) {
+
+    hallDCount++;
+    if (hallDCount >= 1000) {
+
+      any_motor_moving = 1;
+
+      if (posPrev != 0 && posPrev == bldc_cm->position) {
+
+        if (ctrlPrev == BLDC_CTRL_HOMING) {
+          bldc_ClearStatus();
+          ctrlPrev = BLDC_CTRL_IDLE;
+        }
+
+        bldc_Stop(0);
+        bldc_EnableMotor(bldc_cm->index, 0);
+      }
+
+      posPrev = bldc_cm->position;
+      hallDCount = 0;
+    }
+      
+  }
+  else {
+    hallDCount = 0;
+    posPrev = 0;
+  }
+
+}
+
+
 int dbg_state;
 //commutation 
 void bldc_Comutate(unsigned char motor){
 
-        //debugigng output toggle
+    //debugigng output toggle
     LPC_GPIO_PORT->B[1][24] ^= 1;
-
 
     bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
 
@@ -1748,7 +2072,6 @@ void bldc_Comutate(unsigned char motor){
     LPC_SCT1->EVFLAG |= 1 << 0;   // reset overflow flag
     LPC_SCT1->CTRL |= (1 << 2); // halt speed measurment timer
     LPC_SCT1->CTRL |= (1 << 3); // clear count
-      
 
     unsigned char state = bldc_ReadHall(motor); 
 
@@ -1763,12 +2086,10 @@ void bldc_Comutate(unsigned char motor){
     else 
       hall_detect = 0;
 
-
     if(commutation_counter < 6)
          commutation_counter++;
     else commutation_counter = 0, hall_detect = 0; 
 
-      
     if((hall_detect < 6) && (commutation_counter == 6)){ // Detect missing hall pulses
       hall_fault++;
       if (hall_fault > 5){
@@ -1778,8 +2099,7 @@ void bldc_Comutate(unsigned char motor){
         }
     }
 
-    
-    if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_HALL){ //Swap direct. of encoder count){//inverter 
+    if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_HALL){ //Swap direct. of encoder count) //inverter 
         if      (bldc_ccw_next[bldc_motors[motor].hall_state][0] == state)  
           bldc_motors[motor].position++;
         else  if(bldc_cw_next [bldc_motors[motor].hall_state][0] == state)  
@@ -1791,8 +2111,6 @@ void bldc_Comutate(unsigned char motor){
           bldc_motors[motor].position++;
     }
 
-    
-    
     if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && (!(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING)  ||  BLDC_MOTOR_COUNT == 1)){   
         moving_counter[motor] = 100;
         if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_DIRECTION){//Inverted operation
@@ -1810,20 +2128,121 @@ void bldc_Comutate(unsigned char motor){
         }
         LPC_SCT1->CTRL &= ~(1 << 2); // unhalt speed measurment timer
     }else bldc_Speed = 0;
-    
+
     bldc_motors[motor].hall_state = state;//save state
 
 }
 
+char h[4] = {0, 0, 0, 0};
+void dc_Comutate(unsigned char motor, unsigned char state) {
+
+  //debugigng output toggle
+  LPC_GPIO_PORT->B[1][24] ^= 1;
+
+  bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
+
+  int raw_timer = LPC_SCT1->COUNT;
+
+  //take sample of comutation speed
+  if(!LPC_SCT1->EVFLAG & 1 << 0) { //read speed only if timer not overflowed
+    bldc_Speed_raw += LPC_SCT1->COUNT;
+    if(++speed_sample_counter >= 4) {
+      speed_sample_counter = 0;
+      bldc_Speed =  (60ULL * SystemCoreClock)  / bldc_Speed_raw;	    
+      bldc_Speed_raw = 0;
+    }
+  }
+
+  LPC_SCT1->EVFLAG |= 1 << 0;   // reset overflow flag
+  LPC_SCT1->CTRL |= (1 << 2); // halt speed measurment timer
+  LPC_SCT1->CTRL |= (1 << 3); // clear count
+
+  if (state != dbg_state) {
+    if (commutation_counter >= 4) {
+      commutation_counter = 0;
+      hall_detect = 0;
+    }
+
+    if (h[commutation_counter] == state || h[commutation_counter] == 0) {// disorders of the halls
+      hall_detect++;
+    } else {
+      hall_detect = 0;
+    }
+    h[commutation_counter] = state;
+
+    if ((h[0] == h[2] || h[1] == h[3]) && hall_detect != 0 && h[0] != 0 && h[1] != 0) { // one hall operation
+      hall_detect = 0;
+    }
+
+    commutation_counter++;
+  }
+  dbg_state = state;
+
+  if((hall_detect < 4) && (commutation_counter == 4)) { // Detect missing hall pulses
+    hall_fault++;
+    if (hall_fault > 5) {
+      bldc_motors[bldc_motors[motor].index].status |= BLDC_STATUS_HALL_FAULT;
+      bldc_Stop(0);
+      bldc_EnableMotor(bldc_motors[motor].index, 0);
+      hall_fault = 0;
+    }
+  }
+
+  if(bldc_motors[motor].state & BLDC_MOTOR_STATE_INVERT_HALL) { //Swap direct. of encoder count) //inverter 
+    if (dc_ccw_next[bldc_motors[motor].hall_state] == state)  
+      bldc_motors[motor].position++;
+    else if(dc_cw_next [bldc_motors[motor].hall_state] == state)  
+      bldc_motors[motor].position--;
+  } else {                                       //Normal
+    if (dc_ccw_next[bldc_motors[motor].hall_state] == state)  
+      bldc_motors[motor].position--;
+    else if(dc_cw_next [bldc_motors[motor].hall_state] == state)  
+      bldc_motors[motor].position++;
+  }
+
+  if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && bldc_motors[motor].status & BLDC_STATUS_MOVING)
+    moving_counter[motor] = 100;
+
+  if(bldc_motors[motor].status & BLDC_STATUS_ACTIVE && !(bldc_motors[motor].status & BLDC_STATUS_MOVING) &&
+   (!(bldc_motors[OTHER_MOTOR(motor)].status & BLDC_STATUS_MOVING) || BLDC_MOTOR_COUNT == 1)) {   
+    moving_counter[motor] = 100;
+
+    bldc_motors[motor].status |= BLDC_STATUS_MOVING;
+
+    if(bldc_motors[motor].status & BLDC_STATUS_CCW) {
+      bldc_SetDrivers(BLDC_PA_NEG | BLDC_PB_POS, motor);
+    }
+    else {
+      bldc_SetDrivers(BLDC_PA_POS | BLDC_PB_NEG, motor);
+    }
+
+    LPC_SCT1->CTRL &= ~(1 << 2); // unhalt speed measurment timer
+  } else {
+    bldc_Speed = 0;
+
+    // reset WD instad in bldc_setDrivers
+    LPC_WWDT->FEED = 0xAA;		
+    LPC_WWDT->FEED = 0x55;
+  }
+
+  bldc_motors[motor].hall_state = state; //save state
+
+}
 
 // HALL Interrupts
 void PIN_INT2_IRQHandler() {
-  bldc_Comutate(0);
+  if (!(bldc_motors[0].state & BLDC_MOTOR_STATE_DC_OPERATION))
+    bldc_Comutate(0);
+  else
+    dc_Comutate(0, bldc_ReadHall(0));
   LPC_PINT->IST = 1<<2; //clear edge interrupt
 }  
 
 void PIN_INT3_IRQHandler() {
-  bldc_Comutate(0);
+  if (!(bldc_motors[0].state & BLDC_MOTOR_STATE_DC_OPERATION))
+    bldc_Comutate(0);
+  else
+    dc_Comutate(0, bldc_ReadHall(0));
   LPC_PINT->IST = 1<<3; //clear edge interrupt
 }  
 
@@ -1833,26 +2252,23 @@ void PIN_INT4_IRQHandler() {
 }  
 
 void PIN_INT5_IRQHandler() {
-  NVIC_DisableIRQ(PIN_INT5_IRQn);
-  bldc_Comutate(1);
+  if (!(bldc_motors[1].state & BLDC_MOTOR_STATE_DC_OPERATION))
+    bldc_Comutate(1);
+  else
+    dc_Comutate(1, bldc_ReadHall(1));
   LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
-  NVIC_EnableIRQ(PIN_INT7_IRQn);
-  NVIC_EnableIRQ(PIN_INT6_IRQn);
 }  
 
 void PIN_INT6_IRQHandler() {
-  NVIC_DisableIRQ(PIN_INT6_IRQn);
-  bldc_Comutate(1);
+  if (!(bldc_motors[1].state & BLDC_MOTOR_STATE_DC_OPERATION))
+    bldc_Comutate(1);
+  else
+    dc_Comutate(1, bldc_ReadHall(1));
   LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
-  NVIC_EnableIRQ(PIN_INT5_IRQn);
-  NVIC_EnableIRQ(PIN_INT7_IRQn);
 }  
 
 void PIN_INT7_IRQHandler() {
-  NVIC_DisableIRQ(PIN_INT7_IRQn);
   bldc_Comutate(1);
   LPC_PINT->IST = (1<<5) | (1<<6) | (1<<7); //clear edge interrupt
-  NVIC_EnableIRQ(PIN_INT5_IRQn);
-  NVIC_EnableIRQ(PIN_INT6_IRQn);
-}  
+}
 

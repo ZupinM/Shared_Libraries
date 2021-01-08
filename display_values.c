@@ -143,6 +143,7 @@ extern unsigned char ES_1_normallyOpenHi;
 
 extern volatile unsigned int bldc_Speed;
 extern volatile unsigned int number_of_poles;
+extern unsigned int motor_operation;
 
 extern unsigned int SN[4];
 
@@ -534,10 +535,6 @@ void USB_display(void) {
 #endif
     }
     
-    
-    
-    
-    
     if(screen_mux_B==23){
 #ifndef DISABLE_HELIOSTAT
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2d:%.2d",cHeliostatP1_start, (int)HeliostatP1_start/3600, ((int)HeliostatP1_start%3600)/60);
@@ -550,7 +547,6 @@ void USB_display(void) {
       screen_mux_B=24;
 #endif
     }
-    
     
     if(screen_mux_B==24){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.2d:%.2d",cHeliostatP3_end,   (int)HeliostatP3_end/3600  , ((int) HeliostatP3_end%3600)/60);
@@ -571,7 +567,7 @@ void USB_display(void) {
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
     }      
     
-    if(screen_mux_B==26){
+    if(screen_mux_B==26) {
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbldc_Speed, bldc_Speed);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cnumber_of_poles, number_of_poles);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_pA, bldc_Motor(0)->pid.pgain);
@@ -582,8 +578,13 @@ void USB_display(void) {
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_dB, bldc_Motor(1)->pid.dgain);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cdeadbandA, bldc_Motor(0)->pid.deadband);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cdeadbandB, bldc_Motor(1)->pid.deadband);
-
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
+    }
+
+    if(screen_mux_B==27) {
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cmotor_operation, motor_operation);
+      USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
+
       screen_mux_B = 0;
     }
     screen_mux_A=0;

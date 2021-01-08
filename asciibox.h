@@ -196,6 +196,19 @@
 #define cdeadbandA         212
 #define cdeadbandB         213
 
+#define cchannel         214
+#define cpower           215
+#define cspread_factor   216
+#define cbandwidth       217
+#define cmaster          218
+#define cbind            219
+#define crssi            220
+#define cslaves_routes   221
+#define croutes_reset    222
+#define cbaudrate        223
+#define cslave_addr_pos  224
+
+#define cmotor_operation 225
 
 
 //----------------------------------

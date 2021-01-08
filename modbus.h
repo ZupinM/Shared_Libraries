@@ -104,13 +104,15 @@
 #define MCMD_W_destinationImp_A                 0x3A	//62	//go to destination (impulses)
 #define MCMD_W_destinationImp_B                 0x3B	//63	//
 #define MCMD_W_ref_A	  			0x37	//55	//synchonize by going to reference - clear "position" after getting there
-#define MCMD_W_ref_B					0x38	//56	//
+#define MCMD_W_ref_B				0x38	//56	//
 #define MCMD_R_AxisState 			0x39
 #define MCMD_W_SetAxisState  	0x40
 #define MCMD_R_Hall_cntDown		0x41
 #define MCMD_W_Hall_cntDown		0x42
 #define MCMD_R_HallState 			0x43
 #define MCMD_W_SetHallState                     0x44
+#define MCMD_R_MotorOperation 			0x45
+#define MCMD_W_MotorOperation                   0x46
 
 //parameters
 #define MCMD_R_min_range_A	  0x50	//80	//read minimum moving limit for axis A (impulses)

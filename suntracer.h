@@ -332,7 +332,7 @@ extern float parameters [N_parameters];
 #define N_parameters_fixed 7                   //stevilo parametrov
 
 #define f_pcb_version       flash_backup[142]  //verzija TIV
-#define slave_id          flash_backup[0]  //RS485 slave ID
+#define slave_id            flash_backup[0]  //RS485 slave ID
 #define f_cflags            flash_backup[143]  //cflags v float obliki
 #define f_bflags            flash_backup[147]
 #define f_buyflags          flash_backup[144]  //buyflags v float obliki (** options **)

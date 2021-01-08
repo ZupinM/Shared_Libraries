@@ -104,6 +104,11 @@ unsigned int xbReceivePacketRestore(char *pchBuffer);
 
 extern uint8_t routeOrders[MAX_SLAVE_ADDR+1][MAX_ROUTE_HOPS];
 
+extern bldc_motor bldc_motors[BLDC_MOTOR_COUNT];
+
+//fsta
+extern unsigned char any_motor_moving;
+
 #define ftoint(val) (*((unsigned int *)(unsigned int) & (val))) 
 #define fsendval(val) (((ftoint(val) << 24) & 0xff000000) | ((ftoint(val) << 8) & 0xff0000) | ((ftoint(val) >> 24) & 0xff) | ((ftoint(val) >> 8) & 0xff00)) 
 char commShort = 1;
@@ -164,11 +169,14 @@ void modbus_cmd() {
       return;
     }
   } 
-  else if (transceiver == LORA){
+  else if (transceiver == LORA) {
     memcpy((char *)UARTBuffer0, (char *)module.rxBuffer, module.packetLength);
     UARTCount0 = module.packetLength;
   } 
 
+//fsta
+// if(UARTBuffer0[1]==0x45 || UARTBuffer0[1]==0x46)
+// debug_printf("id: %d cmd: %x %x %x %x %x %x %x len: %d\n", UARTBuffer0[0],UARTBuffer0[1],UARTBuffer0[2],UARTBuffer0[3],UARTBuffer0[4],UARTBuffer0[5],UARTBuffer0[6],UARTBuffer0[7],UARTCount0);
 	
   //----- broadcast naslov? ------
   broadcastID = NO_BROADCAST;
@@ -196,7 +204,7 @@ void modbus_cmd() {
       m_ack_state=0;
       modbus_cnt=0;             //no_modbus timeout
 
-      if(LoRa_info_response((uint8_t*) UARTBuffer0, &number_TX_bytes0)){
+      if(LoRa_info_response((uint8_t*) UARTBuffer0, &number_TX_bytes0)) {
         goto TX;
       }
       else {
@@ -310,15 +318,15 @@ void modbus_cmd() {
           break;	
         }
         case MCMD_R_Bldc_PA: {		
-          mcmd_read_float(bldc_Motor(0)->pid.pgain, (char *)UARTBuffer0);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->pid.pgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_IA: {		
-          mcmd_read_float(bldc_Motor(0)->pid.igain, (char *)UARTBuffer0);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->pid.igain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_DA: {		
-          mcmd_read_float(bldc_Motor(0)->pid.dgain, (char *)UARTBuffer0);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->pid.dgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_W_Bldc_PA: {
@@ -347,15 +355,15 @@ void modbus_cmd() {
         }
 
         case MCMD_R_Bldc_PB: {		
-          mcmd_read_float(bldc_Motor(1)->pid.pgain, (char *)UARTBuffer0);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->pid.pgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_IB: {		
-          mcmd_read_float(bldc_Motor(1)->pid.igain, (char *)UARTBuffer0);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->pid.igain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_R_Bldc_DB: {		
-          mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
+          number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
           break;		
         }
         case MCMD_W_Bldc_PB: {
@@ -385,7 +393,7 @@ void modbus_cmd() {
 
         case MCMD_R_Bldc_Deadband: {
           read_int_buf[0] = bldc_Motor(0)->pid.deadband | (bldc_Motor(1)->pid.deadband << 16);
-          mcmd_read_int(1, slave_addr);
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
           break;
         }
         case MCMD_W_Bldc_Deadband: {
@@ -410,8 +418,7 @@ void modbus_cmd() {
 
           break;
         }
-           
-          mcmd_read_float(bldc_Motor(1)->pid.dgain, (char *)UARTBuffer0);
+
         // SERIAL NUMBERS
         case MCMD_R_serial_numbers: {			   
           read_int_buf[0] = SN[0];
@@ -485,10 +492,12 @@ void modbus_cmd() {
         // STOP
         case MCMD_W_stop_motor: {					
           //stop_motor ();	
-          RMeasure_Stop();                                                
-          //bldc_manual(1);  // mzp
+          RMeasure_Stop();
+   
+          bldc_manual(1);  // mzp
           bldc_Stop(1);
           bldc_runout(RUNOUT_ACTIVATE);
+
           store_in_flash = 100;
           ack_reply();
           break;
@@ -555,9 +564,9 @@ void modbus_cmd() {
           break;
         }
         // GO REFERENCE A - CLEAR POSITION
-        case MCMD_W_ref_A: {									
-             bldc_manual(0);  // mzp   
-             usb_drive = 0;
+        case MCMD_W_ref_A: {
+          bldc_manual(0);  // mzp   
+          usb_drive = 0;
           int res = bldc_Home(0);
           if (res == 0) {
             ack_reply();
@@ -629,9 +638,9 @@ void modbus_cmd() {
           break;
         }
         //GO REFERENCE B - CLEAR POSITION
-        case MCMD_W_ref_B: {									
-                bldc_manual(0);  // mzp
-                usb_drive  = 0;
+        case MCMD_W_ref_B: {
+          bldc_manual(0);  // mzp
+          usb_drive  = 0;
           int res = bldc_Home(1);
           if(res == 0) {
             eepromUpdate = 1;
@@ -735,6 +744,23 @@ void modbus_cmd() {
           Utemp_old = Utemp;  */
 
           //eepromUpdate = 1;    mzp
+          break;
+        }	
+
+        case MCMD_R_MotorOperation: {
+          read_int_buf[0] = motor_operation;
+          number_TX_bytes0 = mcmd_read_int(1, slave_addr);
+          break;
+        }
+        
+        case MCMD_W_MotorOperation: {
+          Utemp = mcmd_write_int(0, 0xffffffff);
+
+          if((Utemp == 0 || Utemp & 0x0002 || Utemp & 0x10000) && !(Utemp & 0x0001 )) {  // only allowed Normal, DC on Kvark
+            motor_operation &= ~0x03;
+            motor_operation &= ~(0x03 << 16);
+            motor_operation |= Utemp & (0x03 | 0x03 << 16);
+          }
           break;
         }	
 
@@ -1330,13 +1356,14 @@ void modbus_cmd() {
           break;
         }
       }
-    }                                         //--^--//
+      UARTCount0 = 0;
+    }
+                                            //--^--//
 ////////////////////////////////////////****NANO RESPONSE*****////////////////////////////////////////////////
 
 
-
   TX:
-      if(eepromUpdate) {
+      if(eepromUpdate && !(any_motor_moving)) {
         eeprom_write(SYS_VARS_EE);
       }
       crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
@@ -1363,14 +1390,15 @@ void modbus_cmd() {
             }
 
             set_tx_flag((char *)UARTBuffer0, number_TX_bytes0);
-            //debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x %#02x \n" , UARTBuffer0[0], UARTBuffer0[1], UARTBuffer0[2], UARTBuffer0[3], UARTBuffer0[4], UARTBuffer0[5], UARTBuffer0[6], UARTBuffer0[7], UARTBuffer0[8], UARTBuffer0[9], UARTBuffer0[10]);
-  
           }              
           else if (uartMode == UART_MODE_RS485) {
             UARTSend( (uint8_t *)UARTBuffer0, number_TX_bytes0);
             UARTCount0 = 0;
           }
       }
+      else
+        UARTCount0 = 0;
+
       broadcastID = NO_BROADCAST;
       number_TX_bytes0 = 0;
       if (flags & (1 << reset_it)) {				  //reset ukaz
@@ -1385,14 +1413,20 @@ void modbus_cmd() {
         crc_errors = (crc_errors / 0x10000) * 0x10000; // reset counter, only keep upper 4 bytes (checksum erors)
 
       crc_errors++;
+
+      UARTCount0 = 0;
     }
   }
-  
+
   else if(transceiver == XBEE && UARTBuffer0[0] != slave_addr) {
     UARTSend( (uint8_t *)UARTBuffer0, UARTCount0);
     UARTCount1 = 0;
   }
+  else
+    UARTCount0 = 0;
+  
   LoRa_Responded = 0;
+
 }
 #endif
 
