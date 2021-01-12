@@ -180,11 +180,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
         longitude=FloatTemp;
         sun_schedule_recalc();
         store_in_flash=101;
-<<<<<<< HEAD
-        //eeprom_write(EEPROM_ADDR_MAIN, 0);
-=======
         //eeprom_write(EEPROM_ADDR_BACKUP);
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
         break;
     }
     
@@ -595,11 +591,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
                                 else
                                   bldc_SetInvert(1,0);
                                  
-<<<<<<< HEAD
                                 eeprom_write(EEPROM_ADDR_BACKUP);
-=======
-                                //eeprom_write(EEPROM_ADDR_BACKUP);
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
                                 break;
                               
     case cnormally_close_es:
@@ -607,11 +599,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
       ES_1_normallyOpenLo = (IntTemp & (1<<1)) >> 1;
       ES_0_normallyOpenHi = (IntTemp & (1<<2)) >> 2;
       ES_1_normallyOpenHi = (IntTemp & (1<<3)) >> 3;
-<<<<<<< HEAD
       eeprom_write(EEPROM_ADDR_BACKUP);
-=======
-      //eeprom_write(EEPROM_ADDR_BACKUP);
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
       break;
     case cslave_id:             slave_addr=FloatTemp, eeprom_write(EEPROM_ADDR_MAIN); break;
     //case cbuyflags:             change_buyFlags(IntTemp); cfg_wind_input(); break; //if (decrypt(box,IntTemp)) buyflags^=1<<(crypt_output&0x000000FF); break;        //CRYPTED:  MM AA AA xx, kjer xx pomeni kateri bit bo exor-an

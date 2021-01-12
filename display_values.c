@@ -36,10 +36,7 @@ uint32_t screen_mux_C;               //slow speed multiplex counter for sending 
 unsigned int USBlink_ok;        //preverjanje ce komunikacija (refresh) dela - povecevanje stevila
 unsigned int RS485link_ok;
 extern unsigned int crc_calc;
-<<<<<<< HEAD
 extern uint8_t slave_addr;
-=======
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 //unsigned char CharTemp[10];
 
 /////////////

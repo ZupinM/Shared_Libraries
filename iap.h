@@ -10,13 +10,8 @@ Header file za IAP
 
 //#define IAP_LOCATION 0x03000205
 
-<<<<<<< HEAD
-//typedef void (*IAP)(unsigned int [],unsigned int[]);
-IAP iap_entry;
-=======
 typedef void (*IAP)(unsigned int [],unsigned int[]);
 //IAP iap_entry;
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 
 
 

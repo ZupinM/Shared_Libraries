@@ -1,6 +1,3 @@
-#include "LPC15xx.h"
-#include "../eeprom.h"
-
 
 #define BLDC_PA_POS (1<<5)
 #define BLDC_PA_NEG (1<<1)
@@ -87,10 +84,6 @@ LPC_ADC0_Type *LPC_ADC[2] = {(LPC_ADC0_Type           *) LPC_ADC0_BASE , (LPC_AD
 #define BLDC_CTRL_HOMING       (1<<2)
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
  #define BLDC_ADC_CONTROL     ( 11 - 1 )
  #define BLDC_ADC_U_MEASURE   (0x01) 
  #define BLDC_ADC_I_MEASURE   (0x02) 
@@ -1675,11 +1668,6 @@ void bldc_process() {
 #endif
     }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
-
   voltage_detection();
   Flag_check();
 
@@ -2062,13 +2050,8 @@ int dbg_state;
 //commutation 
 void bldc_Comutate(unsigned char motor){
 
-<<<<<<< HEAD
-    //debugigng output toggle
-    LPC_GPIO_PORT->B[1][24] ^= 1;
-=======
         //debugigng output toggle
     //LPC_GPIO_PORT->B[1][24] ^= 1;
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 
     bldc_motors[motor].status  &=  ~BLDC_STATUS_STALL;
 

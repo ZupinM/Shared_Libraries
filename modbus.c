@@ -647,11 +647,7 @@ void modbus_cmd() {
           }
           break;
         }
-<<<<<<< HEAD
 #endif                
-=======
-#endif        
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
         case MCMD_R_AxisState: {
           read_int_buf[0] = bldc_GetEnabledMotors();
           number_TX_bytes0 = mcmd_read_int(1, slave_addr);
@@ -671,16 +667,9 @@ void modbus_cmd() {
             }else if (mode==MODE_OK){
               tracker_status &= ~SF_TRACKING_ENABLED;
               mode = MODE_SLAVE;
-<<<<<<< HEAD
             }
             sigma_just_connected = 100000;
           }
-
-=======
-            } 
-            sigma_just_connected = 100000;
-          }
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 
           if(Utemp & (1<<18)){
             if (enabled < 8)
@@ -929,11 +918,7 @@ void modbus_cmd() {
           }
           break;
         }
-<<<<<<< HEAD
 #if BLDC_MOTOR_COUNT == 2                
-=======
-#if BLDC_MOTOR_COUNT == 2        
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
         case MCMD_R_EndSwithDetectB: {
           Ftemp = bldc_Motor(1)->end_switchDetect;								
           number_TX_bytes0 = mcmd_read_float(Ftemp, (char *)UARTBuffer0);
@@ -1265,11 +1250,7 @@ void modbus_cmd() {
           //read_int_buf[16]=0;
 #if BLDC_MOTOR_COUNT == 2
           bldc_motor *motB= bldc_Motor(1);
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
           read_int_buf[17] = FloatToUIntBytes (bldc_remaining(1));
           read_int_buf[18] = FloatToUIntBytes(bldc_position(1));
           read_int_buf[19] = FloatToUIntBytes(bldc_target(1));
@@ -1382,13 +1363,8 @@ void modbus_cmd() {
 
 
   TX:
-<<<<<<< HEAD
       if(eepromUpdate && !(any_motor_moving)) {
         eeprom_write(EEPROM_ADDR_MAIN);
-=======
-      if(eepromUpdate) {
-        eeprom_write(EEPROM_ADDR_BACKUP);
->>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
       }
       crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
       UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
