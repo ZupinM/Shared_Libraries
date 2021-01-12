@@ -78,12 +78,21 @@ Header file za SunTracer
 #define	SF_MOVING_IN_A			(1<<12)		//motor A is moving out
 #define SF_MOVING_REF_CLR_A		(1<<13)		//motor A is executing command REF_CLR
 //#define SF_MOVING_REF_NOCLR_A		(1<<14)		//motor A is executing command REF_NOCLR
+<<<<<<< HEAD
 #define SYS_PARAM_EEPROM_ERR        (1<<14)
 #define SYS_PARAM_FLASH_ERR        (1<<15)        //parameters were not stored in flash
 
 #define SF_MOVING_OUT_B               (1<<16)        //motor B is moving in
 #define SF_MOVING_IN_B            (1<<17)        //motor B is moving out        
 #define SF_MOVING_REF_CLR_B        (1<<18)        //motor B is executing command REF_CLR        
+=======
+#define SYS_PARAM_EEPROM_ERR		(1<<14)
+#define SYS_PARAM_FLASH_ERR		(1<<15)		//parameters were not stored in flash
+
+#define SF_MOVING_OUT_B		   	(1<<16)		//motor B is moving in
+#define SF_MOVING_IN_B			(1<<17)		//motor B is moving out		
+#define SF_MOVING_REF_CLR_B		(1<<18)		//motor B is executing command REF_CLR		
+>>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 //#define SF_MOVING_REF_NOCLR_B		(1<<18)		//motor B is executing command REF_NOCLR
 #define SF_ENDSW_A_LO_PRESSED		(1<<19)		//end switch pressed A - LO
 #define SF_ENDSW_A_HI_PRESSED		(1<<20)		//end switch pressed A - HI

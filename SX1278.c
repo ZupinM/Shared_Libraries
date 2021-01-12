@@ -146,13 +146,20 @@ void rx_finished(void){
 //        debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x" , module.rxBuffer[0], module.rxBuffer[1], module.rxBuffer[2], module.rxBuffer[3], module.rxBuffer[4], module.rxBuffer[5], module.rxBuffer[6], module.rxBuffer[7]);
 //        debug_printf("  %d \n" , module.packetLength);
 //      }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 
   checkRouting = 1;
 
   tmp[0] = 0x8D;
   LoRa_SPIWrite(LR_RegOpMode, tmp, 1); //Rx Mode  
   rxOffline_counter = 10000;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 }
 
 
@@ -202,8 +209,11 @@ void set_tx_flag(uint8_t* tx_buffer, uint8_t length){
     tx_packet_length = length;
   }
 }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 3e7b4d36f10695c9b87f7ede252549da4937a84d
 
 void LoRa_standby(void) {
   uint8_t tmp = 0x89;
