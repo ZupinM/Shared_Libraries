@@ -35,7 +35,7 @@ unsigned char enabled = 0;
 unsigned char missed_enable = 0;
 unsigned char enable_tracking_retry = 0;
 extern unsigned char enabled_in_micro;
-extern uint16_t sigma_just_connected;
+extern unsigned int sigma_just_connected;
 extern float           LineResistance;
 
 extern uint8_t usb_drive;
@@ -70,7 +70,7 @@ uint8_t LoRa_Responded = 0;
 
 /* parameters */
 
-extern unsigned char slave_addr;        // slave address on RS485
+extern uint8_t slave_addr;        // slave address on RS485
 long long int online_slaves;
 
 
@@ -104,9 +104,6 @@ unsigned int xbReceivePacketRestore(char *pchBuffer);
 
 extern uint8_t routeOrders[MAX_SLAVE_ADDR+1][MAX_ROUTE_HOPS];
 
-extern bldc_motor bldc_motors[BLDC_MOTOR_COUNT];
-
-//fsta
 extern unsigned char any_motor_moving;
 
 #define ftoint(val) (*((unsigned int *)(unsigned int) & (val))) 
@@ -169,15 +166,11 @@ void modbus_cmd() {
       return;
     }
   } 
-  else if (transceiver == LORA) {
+  else if (transceiver == LORA){
     memcpy((char *)UARTBuffer0, (char *)module.rxBuffer, module.packetLength);
     UARTCount0 = module.packetLength;
   } 
 
-//fsta
-// if(UARTBuffer0[1]==0x45 || UARTBuffer0[1]==0x46)
-// debug_printf("id: %d cmd: %x %x %x %x %x %x %x len: %d\n", UARTBuffer0[0],UARTBuffer0[1],UARTBuffer0[2],UARTBuffer0[3],UARTBuffer0[4],UARTBuffer0[5],UARTBuffer0[6],UARTBuffer0[7],UARTCount0);
-	
   //----- broadcast naslov? ------
   broadcastID = NO_BROADCAST;
   if ((UARTCount0 > 0) && (UARTBuffer0[0] == 0))
@@ -204,7 +197,7 @@ void modbus_cmd() {
       m_ack_state=0;
       modbus_cnt=0;             //no_modbus timeout
 
-      if(LoRa_info_response((uint8_t*) UARTBuffer0, &number_TX_bytes0)) {
+      if(LoRa_info_response((uint8_t*) UARTBuffer0, &number_TX_bytes0)){
         goto TX;
       }
       else {
@@ -353,7 +346,7 @@ void modbus_cmd() {
           }
           break;
         }
-
+#if BLDC_MOTOR_COUNT == 2
         case MCMD_R_Bldc_PB: {		
           number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->pid.pgain, (char *)UARTBuffer0);
           break;		
@@ -390,7 +383,7 @@ void modbus_cmd() {
           }
           break;
         }
-
+#endif
         case MCMD_R_Bldc_Deadband: {
           read_int_buf[0] = bldc_Motor(0)->pid.deadband | (bldc_Motor(1)->pid.deadband << 16);
           number_TX_bytes0 = mcmd_read_int(1, slave_addr);
@@ -449,11 +442,13 @@ void modbus_cmd() {
           number_TX_bytes0 = mcmd_read_float(bldc_remaining(0), (char *)UARTBuffer0);
           break;
         }
+#if BLDC_MOTOR_COUNT == 2
         // REMAIN IMPULSES B
         case MCMD_R_remain_B: {                         // ostanek impulzov do 0000 od zadnjega REF			 							
           number_TX_bytes0 = mcmd_read_float(bldc_remaining(1), (char *)UARTBuffer0);
           break;
         }
+#endif
         case MCMD_R_events: {
           read_int_buf[0] = events;
           events = 0;
@@ -475,6 +470,7 @@ void modbus_cmd() {
           number_TX_bytes0 = mcmd_read_int(8, slave_addr);
           break;
         }
+#if BLDC_MOTOR_COUNT == 2
         case  MCMD_R_errorB_stats: {			
           read_int_buf[0] = fsendval( err_currentB );
           read_int_buf[1] = fsendval( err_voltageB );
@@ -487,17 +483,16 @@ void modbus_cmd() {
           number_TX_bytes0 = mcmd_read_int(8, slave_addr);
           break;
         }
+#endif
         //***** commands *****
 
         // STOP
         case MCMD_W_stop_motor: {					
           //stop_motor ();	
           RMeasure_Stop();
-   
-          bldc_manual(1);  // mzp
+          //bldc_manual(1);  // mzp
           bldc_Stop(1);
           bldc_runout(RUNOUT_ACTIVATE);
-
           store_in_flash = 100;
           ack_reply();
           break;
@@ -578,7 +573,7 @@ void modbus_cmd() {
           }
           break;
         }
-
+#if BLDC_MOTOR_COUNT == 2
         // R POSITION B
         case MCMD_R_position_B: {					
           number_TX_bytes0 = mcmd_read_float(bldc_position(1), (char *)UARTBuffer0);
@@ -652,7 +647,7 @@ void modbus_cmd() {
           }
           break;
         }
-        
+#endif                
         case MCMD_R_AxisState: {
           read_int_buf[0] = bldc_GetEnabledMotors();
           number_TX_bytes0 = mcmd_read_int(1, slave_addr);
@@ -665,14 +660,16 @@ void modbus_cmd() {
 
           bflags&=~(1<<time_enable); //Disable micro tracking 
 
-          if(sigma_just_connected < 2000)             //
+          if(sigma_just_connected < 100000){             //
             if(mode == MODE_MICRO){
               tracker_status |= SF_TRACKING_ENABLED;
               mode = MODE_SLAVE_TRACKING;
             }else if (mode==MODE_OK){
               tracker_status &= ~SF_TRACKING_ENABLED;
               mode = MODE_SLAVE;
-            } 
+            }
+            sigma_just_connected = 100000;
+          }
 
 
           if(Utemp & (1<<18)){
@@ -922,7 +919,7 @@ void modbus_cmd() {
           }
           break;
         }
-        
+#if BLDC_MOTOR_COUNT == 2                
         case MCMD_R_EndSwithDetectB: {
           Ftemp = bldc_Motor(1)->end_switchDetect;								
           number_TX_bytes0 = mcmd_read_float(Ftemp, (char *)UARTBuffer0);
@@ -998,7 +995,7 @@ void modbus_cmd() {
           }
           break;
         }
-
+#endif
         //U SUPPLY FACTOR
         case MCMD_R_Usupply_factor: {
           number_TX_bytes0 = mcmd_read_float(bldc_config()->UConvertRatio, (char *)UARTBuffer0);
@@ -1041,6 +1038,7 @@ void modbus_cmd() {
           }
           break;
         }	
+#if BLDC_MOTOR_COUNT == 2
         // REST POSITION B
         case MCMD_R_modbus_timeout_position_B: {			
           number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->modbus_timeout_position, (char *)UARTBuffer0);
@@ -1055,7 +1053,7 @@ void modbus_cmd() {
           }
           break;
         }
-
+#endif
         // MODBUS TIMEOUT
         case MCMD_R_modbus_timeout: {			
           read_int_buf[0] = modbus_timeout;
@@ -1164,7 +1162,7 @@ void modbus_cmd() {
           number_TX_bytes0 = mcmd_read_float(bldc_Motor(0)->Idetection, (char *)UARTBuffer0);
           break;				
         }
-
+#if BLDC_MOTOR_COUNT == 2
         // GEAR RATIO B
         case MCMD_R_gear_ratio_B: {
           number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->gear_ratio, (char *)UARTBuffer0);
@@ -1224,12 +1222,11 @@ void modbus_cmd() {
           number_TX_bytes0 = mcmd_read_float(bldc_Motor(1)->Idetection, (char *)UARTBuffer0);
           break;				
         }
-
+#endif
         case MCMD_R_All_PARAM: {
 
           float temp;					
           bldc_motor *mot= bldc_Motor(0);
-          bldc_motor *motB= bldc_Motor(1);
 
           temp=(float)swVersion.sw_version;
           temp/=1000.0;				//verzija je napisana v int 	
@@ -1252,6 +1249,9 @@ void modbus_cmd() {
           read_int_buf[14] = bldc_positionImp(0);
           read_int_buf[15] = bldc_targetImp(0);
           //read_int_buf[16]=0;
+#if BLDC_MOTOR_COUNT == 2
+          bldc_motor *motB= bldc_Motor(1);
+
           read_int_buf[17] = FloatToUIntBytes (bldc_remaining(1));
           read_int_buf[18] = FloatToUIntBytes(bldc_position(1));
           read_int_buf[19] = FloatToUIntBytes(bldc_target(1));
@@ -1260,6 +1260,7 @@ void modbus_cmd() {
           read_int_buf[22] = bldc_remainingImp(1);
           read_int_buf[23] = bldc_positionImp(1);
           read_int_buf[24] = bldc_targetImp(1);
+#endif
           // read_int_buf[25]=0;
           number_TX_bytes0 = mcmd_read_int(26, slave_addr);
           break;
@@ -1333,7 +1334,7 @@ void modbus_cmd() {
                   backup_timeout=200;				//4 sekundi zatem backup v flash
           }*/
           break;
-
+#if BLDC_MOTOR_COUNT == 2
         case MCMD_R_RampB:
           m_ack_state = MACK_UNRECOGNIZED_CMD;
           err_reply();
@@ -1348,11 +1349,11 @@ void modbus_cmd() {
                   backup_timeout=200;				//4 sekundi zatem backup v flash
           }*/
           break;
-
+#endif
         //*** 	NOT RECOGNIZED COMMAND	***
         default: {
           m_ack_state = MACK_UNRECOGNIZED_CMD;
-          err_reply();		//ukaz ni prepoznan
+          ack_reply();		//ukaz ni prepoznan
           break;
         }
       }
@@ -1364,7 +1365,7 @@ void modbus_cmd() {
 
   TX:
       if(eepromUpdate && !(any_motor_moving)) {
-        eeprom_write(SYS_VARS_EE);
+        eeprom_write(EEPROM_ADDR_MAIN);
       }
       crc_calc2 = modbus_crc((uint8_t *)UARTBuffer0, number_TX_bytes0, CRC_NORMAL);
       UARTBuffer0[number_TX_bytes0++] = crc_calc2 & 0xFF;
@@ -1402,7 +1403,7 @@ void modbus_cmd() {
       broadcastID = NO_BROADCAST;
       number_TX_bytes0 = 0;
       if (flags & (1 << reset_it)) {				  //reset ukaz
-        eeprom_write(SYS_VARS_EE);
+        eeprom_write(EEPROM_ADDR_BACKUP);
         LPC_WWDT->FEED = 0xAA;				
         LPC_WWDT->FEED = 0x50;		//napacna sekvenca = takojsen reset
        // while(1);    			//cakaj na wdt reset 
@@ -1413,20 +1414,16 @@ void modbus_cmd() {
         crc_errors = (crc_errors / 0x10000) * 0x10000; // reset counter, only keep upper 4 bytes (checksum erors)
 
       crc_errors++;
-
       UARTCount0 = 0;
     }
   }
-
   else if(transceiver == XBEE && UARTBuffer0[0] != slave_addr) {
     UARTSend( (uint8_t *)UARTBuffer0, UARTCount0);
     UARTCount1 = 0;
   }
   else
     UARTCount0 = 0;
-  
   LoRa_Responded = 0;
-
 }
 #endif
 
@@ -1667,7 +1664,7 @@ void modbus_cmd1() {
     #if (STORAGE_TYPE == STORAGE_FLASH)
       flash_write(SYS_VARS_ADDR);                   //save parameters
     #elif (STORAGE_TYPE == STORAGE_EEPROM)
-      eeprom_write(SYS_VARS_EE); 
+      eeprom_write(EEPROM_ADDR_BACKUP); 
     #endif    
     LPC_WWDT->FEED = 0xAA;            
     LPC_WWDT->FEED = 0x50;    
@@ -1712,7 +1709,7 @@ void modbus_cmd1_master() {
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif  
           UARTBuffer2[2] = MACK_OK;
           number_TX_bytes2 = 3;
@@ -1790,7 +1787,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif
           UARTBuffer2[2] = MACK_OK;
           number_TX_bytes2 = 3;
@@ -1963,7 +1960,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif  
           UARTBuffer2[2] = MACK_OK;
           number_TX_bytes2 = 3;
@@ -2014,7 +2011,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif             
 
           UARTBuffer2[2] = MACK_OK;
@@ -2145,7 +2142,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif   
 
           if(UARTBuffer2[0] == 0xff){
@@ -2279,7 +2276,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
           flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-          eeprom_write(SYS_VARS_EE); 
+          eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif   
 
           UARTBuffer2[2] = MACK_OK;
@@ -2329,7 +2326,7 @@ UARTCount2 = UARTCount0;
 #if (STORAGE_TYPE == STORAGE_FLASH)
       flash_write(SYS_VARS_ADDR);                   //save parameters
 #elif (STORAGE_TYPE == STORAGE_EEPROM)
-      eeprom_write(SYS_VARS_EE); 
+      eeprom_write(EEPROM_ADDR_BACKUP); 
 #endif    
       LPC_WWDT->FEED = 0xAA;            
       LPC_WWDT->FEED = 0x50;    
@@ -2436,7 +2433,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
       module.power = UARTBuffer[3] & 0x03;
       module.spFactor = (UARTBuffer[3] & 0xf0) >> 4;
       module.LoRa_BW =  UARTBuffer[4]; 
-      eeprom_write(SYS_VARS_EE); 
+      eeprom_write(EEPROM_ADDR_BACKUP); 
 
       if(UARTBuffer[3] & 0x04){
         LoRa_channel_received = 1;
@@ -2494,7 +2491,7 @@ uint8_t LoRa_info_response(uint8_t * UARTBuffer, unsigned int* number_TX_bytes){
 
       if(updateSuccess){
         // save data
-        eeprom_write(SYS_VARS_EE); 
+        eeprom_write(EEPROM_ADDR_BACKUP); 
 
         UARTBuffer[2] = available_positioners[0];
         UARTBuffer[3] = available_positioners[1]; 

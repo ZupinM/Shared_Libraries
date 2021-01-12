@@ -89,6 +89,7 @@ extern unsigned int zerospeedA, zerospeedB;
 extern unsigned int diff_lowA, diff_lowB;
 
 extern uint8_t slave_addr;
+extern int baudrate;
 
 ///////////////////////////////////////////////
 
@@ -172,14 +173,14 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     case clatitude: {           //LATITUDE
         latitude=FloatTemp;
         sun_schedule_recalc();
-        store_in_flash=100;
+        store_in_flash=101;
         break;
     }
     case clongitude: {          //LONGITUDE
         longitude=FloatTemp;
         sun_schedule_recalc();
-        store_in_flash=100;
-        //eeprom_write(SYS_VARS_EE, 0);
+        store_in_flash=101;
+        //eeprom_write(EEPROM_ADDR_MAIN, 0);
         break;
     }
     
@@ -226,6 +227,20 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
       number_of_poles = IntTemp;
       break;
     }
+
+    case cLoRa_id:
+    LoRa_id = FloatTemp, eeprom_write(EEPROM_ADDR_BACKUP);
+    break;
+
+    case cchannel:              module.channel = IntTemp; break;
+    case cpower:                module.power = IntTemp; break;
+    case cspread_factor:        module.spFactor = IntTemp; break;
+    case cbandwidth:            module.LoRa_BW = IntTemp; break;
+
+    case cbaudrate:
+      baudrate = IntTemp;
+      UART0Init(baudrate);
+      break;
 
     case cmotor_operation: {
       motor_operation = IntTemp;
@@ -420,7 +435,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
             break;
           f_pcb_version = 0x1D4303; // TIV29C3
         }
-        store_in_flash = 100;
+        store_in_flash = 101;
         /* if (decrypt(box,IntTemp)) {
             f_pcb_version=crypt_output;                  //CRYPTED: MM xx yy zz, kjer xx=tiv27, yy="B" (ascii), zz=01
             store_in_flash=100;
@@ -431,7 +446,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
     }
     case cinterval: {                                   //INTERVAL
         interval=FloatTemp;
-        store_in_flash=100;
+        store_in_flash=101;
         break;
     }
     case cStatus: {             //DEBUG okno
@@ -443,12 +458,12 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
 
     case cFocusMiddleA: {  //middle offset za externi sensor
           FocusMiddleA=IntTemp;
-          store_in_flash=100;
+          store_in_flash=101;
           break;
     }
     case cFocusMiddleB: {  //middle offset za externi sensor
           FocusMiddleB=IntTemp;
-          store_in_flash=100;
+          store_in_flash=101;
           break;
     }
 
@@ -576,7 +591,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
                                 else
                                   bldc_SetInvert(1,0);
                                  
-                                eeprom_write(SYS_VARS_EE1);
+                                eeprom_write(EEPROM_ADDR_BACKUP);
                                 break;
                               
     case cnormally_close_es:
@@ -584,9 +599,9 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
       ES_1_normallyOpenLo = (IntTemp & (1<<1)) >> 1;
       ES_0_normallyOpenHi = (IntTemp & (1<<2)) >> 2;
       ES_1_normallyOpenHi = (IntTemp & (1<<3)) >> 3;
-      eeprom_write(SYS_VARS_EE1);
+      eeprom_write(EEPROM_ADDR_BACKUP);
       break;
-    case cslave_id:             slave_addr=FloatTemp, eeprom_write(SYS_VARS_EE1); break;
+    case cslave_id:             slave_addr=FloatTemp, eeprom_write(EEPROM_ADDR_MAIN); break;
     //case cbuyflags:             change_buyFlags(IntTemp); cfg_wind_input(); break; //if (decrypt(box,IntTemp)) buyflags^=1<<(crypt_output&0x000000FF); break;        //CRYPTED:  MM AA AA xx, kjer xx pomeni kateri bit bo exor-an
     case crun_delay_home:       run_delay_home=FloatTemp; break;
     case crun_delay:            run_delay=FloatTemp; break;
@@ -652,8 +667,8 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
    
    
    //heliostat
-   case ctarget_H:target_H = FloatTemp; store_in_flash=100;break;  
-   case ctarget_V: target_V = FloatTemp; store_in_flash=100;break;
+   case ctarget_H:target_H = FloatTemp; store_in_flash=101;break;  
+   case ctarget_V: target_V = FloatTemp; store_in_flash=101;break;
    
    case cHTarget2: if (strstr((char *)StringTemp,"off")){
                     HTarget2 = 1000;
@@ -706,7 +721,7 @@ void write_values(unsigned char box, unsigned int IntTemp, float FloatTemp, unsi
    case cLock :    CFG_lock();   break;
      
   }
-  if (box>=cA1_A)store_in_flash=100;                   //index >= 70? -> means parameters, store them all (in flash, last 128. page)
+  if (box>=cA1_A)store_in_flash=101;                   //index >= 70? -> means parameters, store them all (in flash, last 128. page)
 
   write_value_limit();      //omejitev vrednosti vpisa
 

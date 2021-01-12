@@ -36,7 +36,7 @@ uint32_t screen_mux_C;               //slow speed multiplex counter for sending 
 unsigned int USBlink_ok;        //preverjanje ce komunikacija (refresh) dela - povecevanje stevila
 unsigned int RS485link_ok;
 extern unsigned int crc_calc;
-extern unsigned int slave_addr;
+extern uint8_t slave_addr;
 //unsigned char CharTemp[10];
 
 /////////////
@@ -143,9 +143,11 @@ extern unsigned char ES_1_normallyOpenHi;
 
 extern volatile unsigned int bldc_Speed;
 extern volatile unsigned int number_of_poles;
+extern int baudrate;
 extern unsigned int motor_operation;
 
 extern unsigned int SN[4];
+extern uint8_t LoRa_id;
 
 void USART_To_USB_Send_Data(uint8_t* ascii_string, uint32_t count_in){
 
@@ -567,7 +569,7 @@ void USB_display(void) {
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
     }      
     
-    if(screen_mux_B==26) {
+    if(screen_mux_B==26){
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbldc_Speed, bldc_Speed);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cnumber_of_poles, number_of_poles);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.3f", cpid_pA, bldc_Motor(0)->pid.pgain);
@@ -582,6 +584,13 @@ void USB_display(void) {
     }
 
     if(screen_mux_B==27) {
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%.0d", cLoRa_id, LoRa_id);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cchannel, module.channel);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cpower, module.power);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cspread_factor, module.spFactor);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbandwidth, module.LoRa_BW);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", crssi, LoRa_get_rssi() - 164);
+      buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cbaudrate, baudrate);
       buf2pc_cnt += sprintf((char *)&Str[buf2pc_cnt],"$%c%d", cmotor_operation, motor_operation);
       USART_To_USB_Send_Data(&Str[0],buf2pc_cnt);
 

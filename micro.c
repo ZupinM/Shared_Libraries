@@ -303,10 +303,8 @@ void check_time() {
     //tracking ponoci...
         else {
           if ((time.month!=0)/*&&(back_delay==0)*/){                                         //time.month => na zacetku preden prebere uro, je ta 0:00:00, 0.0.0000, zato gre po resetu za eno sekundo na night position
-            if((int)home_position_A!=1000)
-              bldc_manual(0),  bldc_setPosition(0, geometry_selection (1,home_position_A,(int)geometry_mode_A), 0);       //postavi se na pozicijo za cez noc
-            if((int)home_position_B!=1000)
-              bldc_manual(0),  bldc_setPosition(1, geometry_selection (2,home_position_B,(int)geometry_mode_B), 0);
+            if((int)home_position_A!=1000)bldc_manual(0),  bldc_setPosition(0, geometry_selection (1,home_position_A,(int)geometry_mode_A), 0);       //postavi se na pozicijo za cez noc
+            if((int)home_position_B!=1000)bldc_manual(0),  bldc_setPosition(1, geometry_selection (2,home_position_B,(int)geometry_mode_B), 0);
           } 
         }
     }

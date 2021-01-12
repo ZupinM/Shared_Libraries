@@ -12,6 +12,7 @@ LoRa_t OriginalSettings;
 
 volatile uint8_t transmission = 0;
 volatile uint8_t lora_int_stat = 0;
+extern uint8_t tx_packet_buffer[BUFSIZE];
 uint8_t BindPacket[7];
 uint8_t LoRa_id;
 
@@ -140,15 +141,18 @@ void rx_finished(void){
   LoRa_SPIWrite(LR_RegFifoAddrPtr, tmp, 1);
 
   LoRa_SPIRead(0x00, module.rxBuffer, module.packetLength);
+      
+//      if(module.rxBuffer[0] == 0x10){
+//        debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x" , module.rxBuffer[0], module.rxBuffer[1], module.rxBuffer[2], module.rxBuffer[3], module.rxBuffer[4], module.rxBuffer[5], module.rxBuffer[6], module.rxBuffer[7]);
+//        debug_printf("  %d \n" , module.packetLength);
+//      }
 
-//      debug_printf("id:%#02x  cmd:%#02x %#02x %#02x %#02x %#02x %#02x %#02x" , module.rxBuffer[0], module.rxBuffer[1], module.rxBuffer[2], module.rxBuffer[3], module.rxBuffer[4], module.rxBuffer[5], module.rxBuffer[6], module.rxBuffer[7]);
-//      debug_printf("  %d \n" , module.packetLength);
 
   checkRouting = 1;
 
   tmp[0] = 0x8D;
   LoRa_SPIWrite(LR_RegOpMode, tmp, 1); //Rx Mode  
-
+  rxOffline_counter = 10000;
 }
 
 
@@ -183,7 +187,21 @@ void check_routing(void) {
 
 }
 
-
+void set_tx_flag(uint8_t* tx_buffer, uint8_t length){
+  uint32_t tx_timeout = 1000000;
+  while(tx_buffered_flag && tx_timeout > 0){
+    tx_timeout--;
+    if(transmission == 0){
+      LoRa_TxPacket((uint8_t *)tx_packet_buffer, tx_packet_length, 8000);
+      tx_buffered_flag = 0;
+    }
+  }
+  if(tx_buffered_flag == 0){
+    tx_buffered_flag = 1;
+    memcpy((char * ) tx_packet_buffer, (char * ) tx_buffer, length);
+    tx_packet_length = length;
+  }
+}
 
 
 

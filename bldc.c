@@ -1,4 +1,5 @@
 #include "LPC15xx.h"
+#include "../eeprom.h"
 
 
 #define BLDC_PA_POS (1<<5)
@@ -39,7 +40,7 @@
 #define BLDC_CCW_P6 (BLDC_PC_NEG | BLDC_PB_POS)
 
 //Next CW number
-const unsigned char bldc_cw_next[7][3] = {
+const unsigned char bldc_cw_next[7][3] ={
                           {0,0,0},
                           {BLDC_CW_S2, BLDC_CW_P2, BLDC_CW_S3},
                           {BLDC_CW_S6, BLDC_CW_P6, BLDC_CW_S1},
@@ -48,7 +49,7 @@ const unsigned char bldc_cw_next[7][3] = {
                           {BLDC_CW_S3, BLDC_CW_P3, BLDC_CW_S4},
                           {BLDC_CW_S5, BLDC_CW_P5, BLDC_CW_S6}};
 
-const unsigned char bldc_ccw_next[7][3] = {
+const unsigned char bldc_ccw_next[7][3] ={
                           {0,0,0},
                           {BLDC_CCW_S2, BLDC_CCW_P2, BLDC_CCW_S3},
                           {BLDC_CCW_S4, BLDC_CCW_P4, BLDC_CCW_S5},
@@ -80,6 +81,10 @@ const unsigned char dc_ccw_next[8] = {0, 0, 0, 0, 6, 4, 7, 5};
 #include "suntracer.h"
 
 LPC_ADC0_Type *LPC_ADC[2] = {(LPC_ADC0_Type           *) LPC_ADC0_BASE , (LPC_ADC0_Type           *) LPC_ADC1_BASE} ;
+
+#define BLDC_CTRL_IDLE         0
+#define BLDC_CTRL_TRACKING     (1<<1)
+#define BLDC_CTRL_HOMING       (1<<2)
 
 
  #define BLDC_ADC_CONTROL     ( 11 - 1 )
@@ -118,8 +123,8 @@ volatile unsigned int           bldc_Speed_raw; //ticks from comutation to comut
 extern unsigned int tracker_status;
 
 extern unsigned int store_in_flash;
-extern unsigned char phase_active;
-extern int mosfet_protection_cnt;
+volatile unsigned char phase_active;
+volatile int mosfet_protection_cnt;
 
 extern uint32_t adc3_VAL;
 extern uint32_t adc4_VAL;
@@ -157,10 +162,13 @@ extern float bldc_Current;
 bldc_misc  bldc_cfg;
 bldc_motor bldc_motors[BLDC_MOTOR_COUNT];            //motors
 bldc_motor *bldc_cm = &bldc_motors[0];
+bldc_motor blank_motor;
 
 #define ADC_CONVERT_TICS 120
 
+void ActivateDrivers(int dir);
 void Flag_check();
+void bldc_Comutate(unsigned char motor);
 
 unsigned char ButtonStates() {
   unsigned char val = 0;
@@ -532,6 +540,7 @@ void bldc_init(int LoadDefaults){
 #endif
 
   LPC_GPIO_PORT->DIR[CHARGE_PUMP_PORT] |= 1<<CHARGE_PUMP_PIN; //charge pump
+  LPC_GPIO_PORT->CLR[CHARGE_PUMP_PORT] |= 1<<CHARGE_PUMP_PIN; //charge pump pin low -> no current through 15V LDO
 
   LPC_SYSCON->IOCONCLKDIV |= 1;
  
@@ -677,6 +686,7 @@ void bldc_Stop(int CancelManual){ //stop all motors
   }
 }
 
+
 void bldc_ReleaseDrivers() {
   ActivateDrivers(0);
 }
@@ -687,20 +697,15 @@ void bldc_ClearStatus() {
     //bldc_motors[i].status &= ~BLDC_STATUS_CLEARMASK;
     bldc_motors[i].status = 0;
     bldc_motors[i].i_err_cnt = 0;
-    bldc_EnableMotor(0,1);
-    bldc_EnableMotor(1,1);
+    bldc_EnableMotor(i,1);
     //bldc_Stop(1);
   }
 }
 
 int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to position
-
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return -1;
-
-  if(!any_motor_moving)
-    bldc_cm = &bldc_motors[motor];
-
+  //bldc_cm = &bldc_motors[motor];
   bldc_motor *mptr = &bldc_motors[motor];
 
   if(mptr->status & BLDC_STATUS_ERR)
@@ -736,7 +741,7 @@ int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to 
 #if BLDC_MOTOR_COUNT > 1
     if( (target_error(bldc_cm->index) < (bldc_cm->pid.deadband * 5)) && (target_error(OTHER_MOTOR(bldc_cm->index)) > (bldc_cm->pid.deadband * 5)) && (!any_motor_moving)){
         bldc_cm = &bldc_motors[OTHER_MOTOR(bldc_cm->index)];
-        eeprom_write(SYS_VARS_EE);
+        //eeprom_write(EEPROM_ADDR_MAIN);
     }
 #endif
 
@@ -745,7 +750,7 @@ int bldc_setPosition(unsigned char motor, float newpos, int windmode) { //go to 
 }
 
 int bldc_setPositionImp(unsigned char motor, int newposImp, int windmode){ //go to position
-  if(motor > BLDC_MOTOR_COUNT) 
+  if(motor >= BLDC_MOTOR_COUNT) 
     return -1;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -782,7 +787,7 @@ int bldc_setPositionImp(unsigned char motor, int newposImp, int windmode){ //go 
 }
 
 int bldc_Home(unsigned char motor) {  //execute homing
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -1;
 
   bldc_cm = &bldc_motors[motor];
@@ -833,7 +838,7 @@ unsigned int bldc_GetEnabledMotors(){
 }
 
 int bldc_Enabled(unsigned char motor) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0 ;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -841,7 +846,7 @@ int bldc_Enabled(unsigned char motor) {
 }
 
 void bldc_SetInvert(unsigned char motor, unsigned int state){
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -864,7 +869,7 @@ void bldc_SetInvert(unsigned char motor, unsigned int state){
 }
 
 unsigned int bldc_GetInvert(unsigned char motor) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0 ;
    bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -872,7 +877,7 @@ unsigned int bldc_GetInvert(unsigned char motor) {
 }
 
 void bldc_SetInvertHall(unsigned char motor, unsigned int state) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -891,7 +896,7 @@ void bldc_SetInvertHall(unsigned char motor, unsigned int state) {
 }
 
 unsigned int bldc_GetInvertHall(unsigned char motor) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0 ;
   bldc_motor *mptr = &bldc_motors[motor];  
 
@@ -899,7 +904,7 @@ unsigned int bldc_GetInvertHall(unsigned char motor) {
 }
 
 int bldc_position_to_pulses(unsigned char motor, float pos) {
-  if(motor > BLDC_MOTOR_COUNT)
+  if(motor >= BLDC_MOTOR_COUNT)
     return 0;
   bldc_motor *mptr = &bldc_motors[motor];
   return  pos * mptr->gear_ratio;
@@ -929,6 +934,9 @@ float bldc_U(unsigned char measuring_point) {
   switch(measuring_point){
     case SUPPLY :
       return (float)bldc_Uavg  / bldc_cfg.UConvertRatio;
+    case SUPPLY_UNFILTERED :
+      //debug_printf("%d\n", bldc_Voltage);
+      return (float)bldc_Voltage / bldc_cfg.UConvertRatio;
     case HALL0 :
       return (float)UVccHALL_0_avg  / bldc_cfg.HConvertRatio;
     case HALL1 :
@@ -1046,9 +1054,8 @@ int m_idle(){
 }
 
 int m_referencing(){
-  if ((bldc_motors[0].state & BLDC_STATUS_HOMING) || (bldc_motors[1].state & BLDC_STATUS_HOMING))
-    return 1;
-  return 0;
+ if((bldc_motors[0].state & BLDC_STATUS_HOMING)||(bldc_motors[1].state & BLDC_STATUS_HOMING)) return 1;
+ return 0;
 }
 
 int   motorA_moving()
@@ -1110,7 +1117,7 @@ void bldc_runout(int state){
 }
 
 float bldc_position(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1118,7 +1125,7 @@ float bldc_position(unsigned char motor) {
 }
 
 int bldc_positionImp(unsigned char motor){
-  if(motor>BLDC_MOTOR_COUNT) 
+  if(motor>=BLDC_MOTOR_COUNT) 
     return -0xfff;;
   bldc_motor *mptr = &bldc_motors[motor];
  
@@ -1126,7 +1133,7 @@ int bldc_positionImp(unsigned char motor){
 }
 
 float bldc_target(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1134,7 +1141,7 @@ float bldc_target(unsigned char motor) {
 }
 
 int bldc_targetImp(unsigned char motor){
-  if(motor>BLDC_MOTOR_COUNT) 
+  if(motor>=BLDC_MOTOR_COUNT) 
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1142,7 +1149,7 @@ int bldc_targetImp(unsigned char motor){
 }
 
 float bldc_remaining(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
+  if(motor>=BLDC_MOTOR_COUNT)
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1150,7 +1157,7 @@ float bldc_remaining(unsigned char motor) {
 }
 
 int bldc_remainingImp(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT) 
+  if(motor>=BLDC_MOTOR_COUNT) 
     return -0xfff;
   bldc_motor *mptr = &bldc_motors[motor];
 
@@ -1158,8 +1165,11 @@ int bldc_remainingImp(unsigned char motor) {
 }
 
 bldc_motor *bldc_Motor(unsigned char motor) {
-  if(motor>BLDC_MOTOR_COUNT)
-    return (void*)(0);
+  if(motor>=BLDC_MOTOR_COUNT){
+    memset(&blank_motor, 0, sizeof(blank_motor));
+    return &blank_motor;
+  }
+    //return (void*)(0); //Dereferencing NULL pointer is undefined behaviour!!!
   return &bldc_motors[motor];
 }
 
@@ -1180,7 +1190,7 @@ void Flag_check() {
     if(val >= (-bldc_motors[i].pid.deadband -bounce_stop) && val <= (bldc_motors[i].pid.deadband + bounce_stop))
       bldc_motors[i].status &= ~(BLDC_STATUS_MOVING_OUT | BLDC_STATUS_MOVING_IN);
     else if(bldc_motors[i].status & BLDC_STATUS_MOVING) {
-      if(val > 0) {
+      if(val>0) {
 
         bldc_motors[i].status |= BLDC_STATUS_MOVING_OUT;
         bldc_motors[i].status &= ~BLDC_STATUS_ERR_MOVEOUT;
@@ -1237,9 +1247,10 @@ int bldc_HomeSwitchActive(unsigned char motor , unsigned char switch_h_l) {
   }
 }
 
-unsigned char OldState;
-void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
 
+unsigned char OldState;
+
+void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
   //disable pwm drivers
   phase_active = 0;
   mosfet_protection_cnt = 0;
@@ -1247,6 +1258,7 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
   // WDT reset 
   LPC_WWDT->FEED = 0xAA;		
   LPC_WWDT->FEED = 0x55;
+
 
   if(motor==1){
   #ifdef MOTOR_B_LO1_PORT
@@ -1331,6 +1343,7 @@ void bldc_SetDrivers(unsigned char NewState, unsigned char motor){
         LPC_GPIO_PORT->SET[MOTOR_A_LO3_PORT] |= 1<<MOTOR_A_LO3_PIN; phase_active++; break;// A L L3
     }
   }
+
 }
 
 
@@ -1342,16 +1355,13 @@ void ActivateDrivers(int dir) {
       return;
     bldc_SetDrivers(0,bldc_cm->index);  //stop
     Enable_ChargePump(0);
-
     bldc_cm->status &= ~(BLDC_STATUS_ACTIVE | BLDC_STATUS_MANUAL | BLDC_STATUS_WIND_MODE);
 
   } else {        // only on 1.st entry --- next one is hall comutated
-
     if(dir == 0)   
       return;
     
     Enable_ChargePump(1);
-
     bldc_runtime = 0;
     bldc_pwm = 0;
     bldc_cm->status |= BLDC_STATUS_ACTIVE;
@@ -1651,15 +1661,17 @@ void bldc_process() {
 
 
 //switch motors when current motor is finished
-#if BLDC_MOTOR_COUNT > 1
     if( (target_error(bldc_cm->index) < (bldc_cm->pid.deadband * 5)) && (target_error(OTHER_MOTOR(bldc_cm->index)) > (bldc_cm->pid.deadband * 5)) && (!any_motor_moving)){
         bldc_Stop(0);
-        eeprom_write(SYS_VARS_EE);
+        eeprom_write(EEPROM_ADDR_MAIN);
+#if BLDC_MOTOR_COUNT > 1
         for(int i=0 ; i<2000000 ; i++);
         bldc_cm = &bldc_motors[OTHER_MOTOR(bldc_cm->index)];
         bldc_cm->ctrl = BLDC_CTRL_TRACKING;
-    }
 #endif
+    }
+
+
 
   voltage_detection();
   Flag_check();
@@ -1825,15 +1837,6 @@ void bldc_process() {
   } 
 }
 
-float findGearRatioByMot(unsigned char mot) {
-  float gear = 0;
-  if (mot == 0)
-    gear = gear_ratio_A;
-  else if (mot == 1)
-    gear = gear_ratio_B;
-  return gear;
-}
-
 int hallDCount = 0;
 int posPrev = 0;
 int ctrlPrev = BLDC_CTRL_IDLE;
@@ -1872,7 +1875,7 @@ void dc_process() {
 #if BLDC_MOTOR_COUNT > 1	
   if( (target_error(bldc_cm->index) < (bldc_cm->pid.deadband * 5)) && (target_error(OTHER_MOTOR(bldc_cm->index)) > (bldc_cm->pid.deadband * 5)) && (!any_motor_moving)){	
     bldc_Stop(0);	
-    eeprom_write(SYS_VARS_EE);	
+    eeprom_write(EEPROM_ADDR_MAIN);	
     for(int i=0 ; i<2000000 ; i++);	
     bldc_cm = &bldc_motors[OTHER_MOTOR(bldc_cm->index)];	
     bldc_cm->ctrl = BLDC_CTRL_TRACKING;	
@@ -2074,12 +2077,6 @@ void bldc_Comutate(unsigned char motor){
     LPC_SCT1->CTRL |= (1 << 3); // clear count
 
     unsigned char state = bldc_ReadHall(motor); 
-
-    if(dbg_state == state || state == 0 || state > 6){
-      //LPC_GPIO_PORT->B[1][17] ^= 1;
-      for(volatile int i = 0 ; i<1000; i++);
-    }
-    dbg_state = state;
 
     if(state > 0 && state < 7)
       hall_detect++;

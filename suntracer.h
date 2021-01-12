@@ -9,6 +9,7 @@
 #include <string.h>
 #include "display_values.h"
 #include "bldc.h"
+#include "../eeprom.h"
 //#include "stm32f10x_lib.h"
 //#include "rtc.h"
 /* Definitions ---------------------------------------------------------------*/
@@ -74,7 +75,6 @@ typedef enum {
   MODE_MICRO
 }MODE_TYPE;
 
-extern float flash_backup[0x100];
 
 //tracker_status;			//status kondicije, v kateri je tracker (napake, halli...)
 //#define ERR_OVERCURRENT_MOTOR_A		0		//if motor has exceed max_I_motor value

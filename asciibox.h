@@ -209,6 +209,7 @@
 #define cslave_addr_pos  224
 
 #define cmotor_operation 225
+#define cLoRa_id         226
 
 
 //----------------------------------

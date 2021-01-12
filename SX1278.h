@@ -39,6 +39,9 @@ extern uint8_t LoRa_bindMode_master;
 extern uint8_t conv_mode;
 extern uint8_t LoRa_route[165][MAX_ROUTE_HOPS];
 extern uint8_t LoRa_id;
+extern unsigned int rxOffline_counter;
+extern uint8_t tx_buffered_flag;
+extern  uint32_t tx_packet_length;
 
 extern volatile uint8_t transmission;
 extern volatile uint8_t lora_int_stat;

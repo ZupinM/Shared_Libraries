@@ -54,6 +54,7 @@ typedef struct{
 #define HALL0   0
 #define HALL1   1
 #define SUPPLY  2
+#define SUPPLY_UNFILTERED  3
 
 #define BLDC_MOTOR_STATE_ENABLED (1<<0)
 #define BLDC_MOTOR_STATE_INVERT_DIRECTION  (1<<1)
@@ -91,7 +92,7 @@ typedef struct{
 
 #define BLDC_STATUS_TO_DST_ERR       (1<<19)
 
-#define BLDC_STATUS_CLEARMASK (BLDC_STATUS_ERR|BLDC_STATUS_STALL|BLDC_STATUS_OVERCURRENT|BLDC_STATUS_CABLEERROR|BLDC_STATUS_HALL_FAULT|BLDC_STATUS_HOME_TIMEOUT|BLDC_STATUS_ENDSWITCH_ERROR|BLDC_STATUS_MOVING_TO_DST_ERR)
+#define BLDC_STATUS_CLEARMASK (BLDC_STATUS_ERR|BLDC_STATUS_STALL|BLDC_STATUS_OVERCURRENT|BLDC_STATUS_CABLEERROR|BLDC_STATUS_HALL_FAULT|BLDC_STATUS_HOME_TIMEOUT|BLDC_STATUS_ENDSWITCH_ERROR|BLDC_STATUS_TO_DST_ERR)
 
 //bldc_status
 //#define BLDC_INIT               (1U<<7)
@@ -103,9 +104,6 @@ typedef struct{
 #define BLDC_SAVE               (1U<<1)
 #define BLDC_LOCKED             (1U<<0)
 
-#define BLDC_CTRL_IDLE         0
-#define BLDC_CTRL_TRACKING     (1<<1)
-#define BLDC_CTRL_HOMING       (1<<2)
 #define BLDC_CTRL_STOP         (1<<3)
 
 #define OTHER_MOTOR(M)   ((M)^1)
@@ -154,11 +152,7 @@ int         bldc_HomeSwitchActive(unsigned char motor, unsigned char switch_h_l)
 void bldc_EnableMotors(unsigned int state);
 void bldc_EnableMotor(unsigned char motor, unsigned char state);
 void bldc_SetDrivers(unsigned char NewState, unsigned char motor);
-void bldc_Comutate(unsigned char motor);
 void dc_Comutate(unsigned char motor, unsigned char state);
-void ActivateDrivers(int dir);
-void Enable_ChargePump(uint8_t state);
-void bldc_update_pwm(unsigned short value);
 void motor_rampDC();
 
 void getFocus(void);
