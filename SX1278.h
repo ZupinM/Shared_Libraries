@@ -22,7 +22,6 @@
 #define MASTER 1
 #define SLAVE 0
 #define DISABLE 2     //bind mode
-#define CANCEL 5     //bind mode
 #define BY_CHANNEL 3  //bind mode
 #define MASTER_BY_CHANNEL 4 //bind mode
 
