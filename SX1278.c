@@ -219,10 +219,12 @@ void LoRa_Bind_Mode(uint8_t mode){
 
   if(!(LoRa_bindMode_slave)){
 
-    OriginalSettings.channel = module.channel;
-    OriginalSettings.power = module.power;
-    OriginalSettings.spFactor = module.spFactor;
-    OriginalSettings.LoRa_BW = module.LoRa_BW;
+    if(module.channel > 0){ //dont overwrite with bind channel data
+      OriginalSettings.channel = module.channel;
+      OriginalSettings.power = module.power;
+      OriginalSettings.spFactor = module.spFactor;
+      OriginalSettings.LoRa_BW = module.LoRa_BW;
+    }
 
     BindPacket[0] = 0; //slave addr = broadcast
     BindPacket[1] = MCMD_LORA_SET_SETTINGS;
@@ -255,10 +257,12 @@ void LoRa_Bind_Mode(uint8_t mode){
   }
   else if (mode == DISABLE) { //exit binding mode on slave or master
     if (LoRa_bindMode_slave) {
-      OriginalSettings.channel = module.channel;
-      OriginalSettings.power = module.power;
-      OriginalSettings.spFactor = module.spFactor;
-      OriginalSettings.LoRa_BW = module.LoRa_BW;
+      if(module.channel > 0){ //dont overwrite with bind channel data
+        OriginalSettings.channel = module.channel;
+        OriginalSettings.power = module.power;
+        OriginalSettings.spFactor = module.spFactor;
+        OriginalSettings.LoRa_BW = module.LoRa_BW;
+      }
       set_LED(BLUE, 1, 500);
       LoRa_bindMode_slave = 0;
       LoRa_config(module.channel, module.power, module.spFactor, module.LoRa_BW, LoRa_MAX_PACKET, RxMode); //Set settings to slave
@@ -280,6 +284,13 @@ void LoRa_Bind_Mode(uint8_t mode){
     LoRa_config(module.channel, LoRa_POWER_20DBM, LoRa_SF_10, LoRa_BW_62_5KHZ, LoRa_MAX_PACKET, RxMode);
     module.spFactor = OriginalSettings.spFactor;
     module.LoRa_BW = OriginalSettings.LoRa_BW;    
+  }
+  else if (mode == CANCEL) { //exit binding mode on slave, restore old settings
+    if (LoRa_bindMode_slave) {
+      set_LED(BLUE, 1, 500);
+      LoRa_bindMode_slave = 0;
+      LoRa_config(OriginalSettings.channel, OriginalSettings.power, OriginalSettings.spFactor, OriginalSettings.LoRa_BW, LoRa_MAX_PACKET, RxMode); //Set settings to slave
+    } 
   }
 }
 
